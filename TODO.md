@@ -1,0 +1,45 @@
+- Node
+    - tests that inherited nodes serialize correctly
+    - /graph/{uuid}/node/{ID}
+- Edge
+    - Transform Edge to Chain
+    - /graph/{uuid}/edge/{ID}
+- Server
+    - /lg/test
+    - /lg
+- Adapter
+    - /lg/adapter/{adapter} GET/POST
+    - /lg/adapter/{adapter}/{job_uuid} POST
+- Task
+    - /lg/task/{job_uuid}/{task_uuid} GET
+    - /lg/task/{job_uuid}/{task_uuid} HEAD
+    - /lg/task/{job_uuid}/{task_uuid} DELETE
+    - /lg/task/{job_uuid}/{task_uuid} POST
+- Job
+    - /graph GET
+    - /graph POST
+    - /graph/{uuid} HEAD
+    - /graph/{uuid} GET
+    - /graph/{uuid} POST
+    - /graph/{uuid} PUT
+    - /graph/{uuid} DELETE
+    - /graph/{uuid}/meta GET
+    - /graph/{uuid}/meta PUT
+    - /graph/{uuid}/seeds GET
+    - /graph/{uuid}/status GET
+    - /graph/{uuid}/status HEAD
+    - /reset/{uuid} PUT
+    - /lg/config/{job_uuid} GET
+    - /lg/config/{job_uuid} POST
+    - /lg/config/{job_uuid}/adapter GET
+    - /lg/config/{job_uuid}/adapter POST
+    - /lg/task/{job_uuid} GET
+    - /lg/task/{job_uuid} POST
+    - /lg/delta/{job_uuid} GET/POST
+
+
+- Add graph-specific endpoint parameters for user and role
+- Add bulk endpoint query parameters
+- d3 stuff
+- keyvalue stuff
+- /lg/test
