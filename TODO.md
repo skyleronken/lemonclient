@@ -1,9 +1,10 @@
 - Node
     - /graph/{uuid}/node/{ID}
+    - Add Nodes to Job serialization
 - Edge
-    - Create and serialize edges
     - Transform Edge to Chain
     - /graph/{uuid}/edge/{ID}
+    - Add Edges to Job serialization
 - Server
     - /lg/test
     - /lg

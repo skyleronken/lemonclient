@@ -34,7 +34,7 @@ func NodeToJson(n Node) ([]byte, error) {
 
 // func (n Node) MarshalJSON() ([]byte, error) {
 
-// 	ns, _ := json.Marshal(n.Content)
+// 	ns, _ := json.Marshal(n)
 // 	nm, err := JSONBytesToMap(ns)
 // 	if err != nil {
 // 		return nil, err

@@ -34,3 +34,48 @@ var newFoo := Foo{
 nodeJson, err := NodeToJson(newFoo)
 ```
 In the above example, `nodeJson` is a []byte containing the appropriate `value` and `type` keys that are required by LemonGraph. 
+
+## Edges
+
+Edges must implement two methods from the `EdgeInterface` interface, and must embed the `Edge` struct:
+```
+type EdgeInterface interface {
+	Type() string
+	Key() string
+}
+```
+For example:
+```
+type BelongsTo struct {
+	Edge
+	Baz string
+}
+
+func (t BelongsTo) Type() string {
+	return "BelongsTo"
+}
+
+func (t BelongsTo) Key() string {
+	return t.Baz
+}
+```
+This is to allow edges to be lightweight abstractions for linking nodes, but providing behind-the-scenes helper functions to transform edges into LG JSON format:
+```
+	foo1 = Foo{
+		Foo: "bar",
+	}
+
+	foo2 = Foo{
+		Foo: "baz",
+	}
+
+	bt = BelongsTo{
+		Baz: "bin",
+	}
+	bt.Source = foo1
+	bt.Target = foo2
+
+	eJson, err := EdgeToJson(bt)
+```
+In the above example, eJson is a []byte containing the appropriate LG edge format
+
