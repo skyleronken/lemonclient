@@ -1,7 +1,7 @@
 - Node
-    - tests that inherited nodes serialize correctly
     - /graph/{uuid}/node/{ID}
 - Edge
+    - Create and serialize edges
     - Transform Edge to Chain
     - /graph/{uuid}/edge/{ID}
 - Server

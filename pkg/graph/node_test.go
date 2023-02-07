@@ -1,8 +1,6 @@
 package graph
 
 import (
-	"bytes"
-	"encoding/json"
 	"os"
 	"testing"
 
@@ -17,14 +15,14 @@ var tt1value string = "bar"
 
 // Start - Test Node Type
 type TestType1 struct {
-	Foo string `json:"foo"`
+	Foo string
 }
 
-func (t *TestType1) Type() string {
+func (t TestType1) Type() string {
 	return "TestType1"
 }
 
-func (t *TestType1) Key() string {
+func (t TestType1) Key() string {
 	return t.Foo
 }
 
@@ -43,42 +41,68 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func Test_ToNode(t *testing.T) {
+func Test_NodeToJson(t *testing.T) {
 	assert := assert.New(t)
 
-	n1 := ToNode(&tt1)
+	nJson, err := NodeToJson(tt1)
+	assert.NoError(err)
 
-	assert.IsType(Node{}, n1, "n1 should be Node type")
+	tMap, err := JSONBytesToMap(nJson)
+	assert.NoError(err)
 
-	assert.Equal("TestType1", n1.Type, "Type field of n1 should match the Node type")
-
-	assert.Equal(n1.Key, tt1value, "Value field of n1 should match the tt1value")
+	assert.Equal(tt1.Type(), tMap["type"])
+	assert.Equal(tt1.Key(), tMap["value"])
+	assert.Equal(tt1.Foo, tMap["Foo"])
 
 }
 
-func Test_SerializeNode(t *testing.T) {
-	assert := assert.New(t)
+// func Test_SerializeNode(t *testing.T) {
+// 	assert := assert.New(t)
 
-	n1 := ToNode(&tt1)
+// 	n1 := ToNode(tt1)
 
-	rawType := new(bytes.Buffer)
+// 	rawType := new(bytes.Buffer)
 
-	err := json.NewEncoder(rawType).Encode(n1)
+// 	err := json.NewEncoder(rawType).Encode(n1)
 
-	if err != nil {
-		t.Error("Error serializing test structure", err)
-	}
+// 	if err != nil {
+// 		t.Fatal("Error serializing test structure", err)
+// 	}
 
-	jm, err := JSONBytesToMap(rawType.Bytes())
-	if err != nil {
-		t.Error("Error mapping JSON bytes")
-	}
+// 	jm, err := JSONBytesToMap(rawType.Bytes())
+// 	if err != nil {
+// 		t.Fatal("Error mapping JSON bytes")
+// 	}
 
-	assert.Equal("TestType1", jm["type"], "Type field should exist and be TestType1")
-	assert.Equal("bar", jm["foo"], "foo should equal bar")
+// 	assert.Equal("TestType1", jm["type"], "Type field should exist and be TestType1")
+// 	assert.Equal("bar", jm["Foo"], "foo should equal bar")
 
-}
+// }
 
 // func Test_DeserializeNode(t *testing.T) {
+
+// 	assert := assert.New(t)
+
+// 	n1 := ToNode(tt1)
+
+// 	typeJson := new(bytes.Buffer)
+
+// 	err := json.NewEncoder(typeJson).Encode(n1)
+
+// 	if err != nil {
+// 		t.Fatal("Error serializing test structure", err)
+// 	}
+
+// 	var newNode Node[TestType1]
+// 	err = json.NewDecoder(typeJson).Decode(&newNode)
+
+// 	if err != nil {
+// 		t.Fatalf("Error deserializing test data: %s\n%+v", err.Error(), newNode)
+// 	}
+
+// 	assert.Equal(newNode.ID, n1.ID)
+// 	assert.Equal(newNode.Key, n1.Key)
+// 	assert.Equal(newNode.Type, n1.Type)
+// 	assert.EqualValues(newNode.Content, n1.Content)
 
 // }

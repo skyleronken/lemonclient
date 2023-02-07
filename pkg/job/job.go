@@ -3,6 +3,7 @@ package job
 import (
 	"encoding/json"
 
+	"github.com/skyleronken/lemonclient/pkg/graph"
 	"github.com/skyleronken/lemonclient/pkg/server"
 )
 
@@ -12,10 +13,10 @@ import (
 // Structs
 
 type Job struct {
-	Id   string      `json:"id"`
-	Meta JobMetadata `json:"meta,omitempty"`
-	Seed bool        `json:"seed,omitempty"`
-	//Nodes []graph.Node[any] `json:"nodes,omitempty"`
+	Id    string       `json:"id"`
+	Meta  JobMetadata  `json:"meta,omitempty"`
+	Seed  bool         `json:"seed,omitempty"`
+	Nodes []graph.Node `json:"nodes,omitempty"`
 	//Edges    []graph.Edge               `json:"edges,omitempty"`
 	//Chains   []graph.Chain              `json:"chains,omitempty"`
 	//Adapters map[string]adapter.Adapter `json:"adapters,omitempty"`

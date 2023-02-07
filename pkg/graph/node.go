@@ -1,68 +1,70 @@
 package graph
 
-import (
-	"encoding/json"
-)
+import "encoding/json"
 
-type Node struct {
-	Content interface{}
-	NodeMetadata
-}
-
-type NodeMetadata struct {
-	ID   string `json:"id,omitempty"`
-	Type string `json:"type"`
-	Key  string `json:"value"`
-}
-
-type NodeType interface {
+type Node interface {
 	Type() string
 	Key() string
 }
 
-func ToNode(i NodeType) Node {
+// type NodeMetadata struct {
+// 	ID   string `json:"id,omitempty"`
+// 	Type string `json:"type"`
+// 	Key  string `json:"value"`
+// }
 
-	node := Node{}
+// type NodeType interface {
+// 	Type() string
+// 	Key() string
+// }
 
-	node.Type = i.Type()
-	node.Key = i.Key()
-	node.Content = i
+func NodeToJson(n Node) ([]byte, error) {
 
-	return node
-}
-
-func (n Node) MarshalJSON() ([]byte, error) {
-
-	//ns, err := StructToMap(n.Content)
-	ns, _ := json.Marshal(n.Content)
-	nm, err := JSONBytesToMap(ns)
+	nJson, _ := json.Marshal(n)        // Convert to JSON to account for tags
+	nMap, err := JSONBytesToMap(nJson) // Convert to map to add type/key
 	if err != nil {
 		return nil, err
 	}
 
-	nm["type"] = n.Type
-	nm["value"] = n.Key
-	nm["id"] = n.ID
+	nMap["type"] = n.Type()
+	nMap["value"] = n.Key()
 
-	return json.Marshal(nm)
-
+	return json.Marshal(nMap)
 }
 
-// func (n *Node) UnmarshalJSON(data []byte) error {
-// 	type Alias Node
+// func (n Node) MarshalJSON() ([]byte, error) {
 
-// 	// aux := &struct {
-// 	// 	Roles map[string]server.Permissions `json:"roles,omitempty"`
-// 	// 	*Alias
-// 	// }{
-// 	// 	Alias: (*Alias)(jm),
-// 	// }
+// 	ns, _ := json.Marshal(n.Content)
+// 	nm, err := JSONBytesToMap(ns)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-// 	// json.Unmarshal(data, &aux)
+// 	nm["type"] = n.Type
+// 	nm["value"] = n.Key
+// 	nm["id"] = n.ID
 
-// 	// for k, v := range aux.Roles {
-// 	// 	jm.Roles = append(jm.Roles, server.User{Name: k, Permissions: v})
-// 	// }
+// 	return json.Marshal(nm)
+
+// }
+
+// func (n *Node[NodeType]) UnmarshalJSON(data []byte) error {
+
+// 	nm, err := JSONBytesToMap(data)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	n.Type = nm["type"].(string)
+// 	n.Key = nm["value"].(string)
+// 	n.ID = nm["id"].(string)
+
+// 	delete(nm, "type")
+// 	delete(nm, "value")
+// 	delete(nm, "id")
+
+// 	nStruct := mapToStruct(nm)
+// 	n.Content = nStruct.(NodeType)
 
 // 	return nil
 // }
