@@ -12,20 +12,20 @@ type Edge struct {
 type EdgeInterface interface {
 	Type() string
 	Key() string
-	GetSource() Node
-	GetTarget() Node
+	GetSource() NodeInterface
+	GetTarget() NodeInterface
 }
 
 type EdgeMembers struct {
-	Source Node `json:"src"`
-	Target Node `json:"tgt"`
+	Source NodeInterface `json:"src"`
+	Target NodeInterface `json:"tgt"`
 }
 
-func (e Edge) GetSource() Node {
+func (e Edge) GetSource() NodeInterface {
 	return e.Source
 }
 
-func (e Edge) GetTarget() Node {
+func (e Edge) GetTarget() NodeInterface {
 	return e.Target
 }
 

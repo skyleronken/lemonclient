@@ -19,6 +19,7 @@ var te1value string = "bar"
 
 // Start - Test Node Type
 type TestType struct {
+	Node
 	Foo string
 }
 

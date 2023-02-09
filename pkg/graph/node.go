@@ -2,23 +2,21 @@ package graph
 
 import "encoding/json"
 
-type Node interface {
+type Node struct {
+	NodeInterface `json:",omitempty"`
+	NodeMembers
+}
+
+type NodeInterface interface {
 	Type() string
 	Key() string
 }
 
-// type NodeMetadata struct {
-// 	ID   string `json:"id,omitempty"`
-// 	Type string `json:"type"`
-// 	Key  string `json:"value"`
-// }
+type NodeMembers struct {
+	ID string
+}
 
-// type NodeType interface {
-// 	Type() string
-// 	Key() string
-// }
-
-func NodeToJson(n Node) ([]byte, error) {
+func NodeToJson(n NodeInterface) ([]byte, error) {
 
 	nJson, _ := json.Marshal(n)        // Convert to JSON to account for tags
 	nMap, err := JSONBytesToMap(nJson) // Convert to map to add type/key
@@ -30,6 +28,15 @@ func NodeToJson(n Node) ([]byte, error) {
 	nMap["value"] = n.Key()
 
 	return json.Marshal(nMap)
+}
+
+func JSONBytesToMap(b []byte) (map[string]interface{}, error) {
+	var m map[string]interface{}
+	err := json.Unmarshal(b, &m)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // func (n Node) MarshalJSON() ([]byte, error) {
@@ -68,12 +75,3 @@ func NodeToJson(n Node) ([]byte, error) {
 
 // 	return nil
 // }
-
-func JSONBytesToMap(b []byte) (map[string]interface{}, error) {
-	var m map[string]interface{}
-	err := json.Unmarshal(b, &m)
-	if err != nil {
-		return nil, err
-	}
-	return m, nil
-}
