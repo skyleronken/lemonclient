@@ -2,7 +2,6 @@
     - /graph/{uuid}/node/{ID}
     - Add Nodes to Job serialization
 - Edge
-    - Transform Edge to Chain
     - /graph/{uuid}/edge/{ID}
     - Add Edges to Job serialization
 - Server
@@ -44,3 +43,4 @@
 - d3 stuff
 - keyvalue stuff
 - /lg/test
+- add 'id' to edge and node
