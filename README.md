@@ -91,3 +91,21 @@ cJson, err := ChainToJson(chain)
 // cJson[1] == edge JSON
 // cJSon[2] == destinatio node JSON
 ```
+
+## Job
+
+The Job object is used for the creation of jobs (note: only creation). It can be provided to the `Server` object's `CreateJob()` method in order to do so. It returns a `NewJobId` object containing the UUID of the newly created job.
+```
+tJob = job.Job{
+	...
+}
+
+server = Server{
+	ServerDetails: ServerDetails{
+		Address: "127.0.0.1",
+		Port:    8000,
+	},
+}
+
+newJob, err := server.CreateJob(tJob)
+```
