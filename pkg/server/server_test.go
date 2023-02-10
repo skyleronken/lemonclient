@@ -82,8 +82,8 @@ func Setup() {
 	}
 
 	tJob = job.Job{
-		Meta: tMeta,
-		//Nodes: []graph.NodeInterface{n1, n2},
+		Meta:  tMeta,
+		Nodes: []graph.NodeInterface{n1, n2},
 		Edges: []graph.EdgeInterface{e1},
 	}
 
