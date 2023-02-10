@@ -109,7 +109,7 @@ func Test_EdgeToJson(t *testing.T) {
 	assert.Equal(te1value, eMap["Foo"])
 
 	s := eMap["src"].(map[string]interface{})
-	d := eMap["dst"].(map[string]interface{})
+	d := eMap["tgt"].(map[string]interface{})
 
 	assert.Equal(tt1.Type(), s["type"])
 	assert.Equal(tt1.Key(), s["value"])

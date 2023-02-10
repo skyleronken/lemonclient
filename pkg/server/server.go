@@ -27,11 +27,18 @@ type ServerDetails struct {
 }
 
 type ServerError struct {
-	Message string
+	Code    int    `json:"code"`
+	Reason  string `json:"reason"`
+	Message string `json:"message"`
+}
+
+type NewJobId struct {
+	ID   string `json:"id"`
+	UUID string `json:"uuid"`
 }
 
 func (e *ServerError) Error() string {
-	return e.Message
+	return fmt.Sprintf("%d %s: %s", e.Code, e.Message, e.Reason)
 }
 
 // Result types
@@ -55,6 +62,8 @@ func (s *Server) newRequest() *sling.Sling {
 	if s.sling == nil {
 		addr := fmt.Sprintf("http://%s:%d", s.Address, s.Port)
 		s.sling = sling.New().Client(s.Client).Base(addr)
+		s.sling.Set("Content-Type", "application/json")
+		s.sling.Set("Accept", "application/json")
 	}
 
 	return s.sling.New()
@@ -70,6 +79,11 @@ func (s *Server) sendGet(path string, params interface{}, resultStruct interface
 	if err != nil {
 		err = errorStruct
 	}
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= 300 {
+		err = fmt.Errorf("non 200 response code: %s", errorStruct.Error())
+	} else {
+		err = nil
+	}
 	return resp, err
 }
 
@@ -80,6 +94,11 @@ func (s *Server) sendPost(path string, params interface{}, body interface{}, res
 	if err != nil {
 		err = errorStruct
 	}
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= 300 {
+		err = fmt.Errorf("non 200 response code: %s", errorStruct.Error())
+	} else {
+		err = nil
+	}
 	return resp, err
 }
 
@@ -88,9 +107,9 @@ func (s *Server) sendPost(path string, params interface{}, body interface{}, res
 // /lg/status
 
 func (s *Server) Status() (ServerStatus, error) {
-	status := &ServerStatus{}
-	_, err := s.sendGet(LG_SERVER_STATUS, nil, status)
-	return *status, err
+	status := ServerStatus{}
+	_, err := s.sendGet(LG_SERVER_STATUS, nil, &status)
+	return status, err
 }
 
 func (s *Server) Version() (string, error) {
@@ -108,9 +127,11 @@ func (s *Server) Uptime() (float64, error) {
 // TODO: /lg
 
 // POST: /graph
-func (s *Server) CreateJob(j job.Job) error {
+func (s *Server) CreateJob(j job.Job) (NewJobId, error) {
 
-	//jJson, err := json.Marshal(j)
+	newJob := NewJobId{}
 
-	return nil
+	_, err := s.sendPost("/graph", nil, j, &newJob)
+
+	return newJob, err
 }

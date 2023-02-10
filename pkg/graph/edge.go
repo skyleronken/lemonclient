@@ -53,7 +53,7 @@ func EdgeToJson(e EdgeInterface, min ...bool) ([]byte, error) {
 	dMap, _ := utils.JSONBytesToMap(dst)
 
 	eMap["src"] = sMap
-	eMap["dst"] = dMap
+	eMap["tgt"] = dMap
 	eMap["type"] = e.Type()
 	eMap["value"] = e.Key()
 

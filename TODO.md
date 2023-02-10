@@ -11,7 +11,29 @@
     - /lg/task/{job_uuid}/{task_uuid} POST
 - Job
     - /graph GET [bulk]
-    - /graph POST 
+
+        [
+        {
+            "graph": "af09a42b-a97b-11ed-925d-0242ac110002",
+            "id": "af09a42b-a97b-11ed-925d-0242ac110002",
+            "meta": {
+                "roles": {
+                    "bob": {
+                        "reader": true,
+                        "writer": false
+                    }
+                },
+                "priority": 100,
+                "enabled": true
+            },
+            "size": 57344,
+            "nodes_count": 2,
+            "edges_count": 1,
+            "maxID": 15,
+            "created": "2023-02-10T19:47:00.106961Z"
+        },
+        ]
+
     - /graph/{uuid} HEAD
     - /graph/{uuid} GET
     - /graph/{uuid} POST

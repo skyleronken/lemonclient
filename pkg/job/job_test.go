@@ -54,7 +54,7 @@ func (t TestEdge) Key() string {
 
 // end test types
 
-func setup() {
+func Setup() {
 
 	n1 = TestNode{
 		Foo: "foo1",
@@ -104,7 +104,7 @@ func setup() {
 }
 
 func TestMain(m *testing.M) {
-	setup()
+	Setup()
 	code := m.Run()
 	os.Exit(code)
 }
