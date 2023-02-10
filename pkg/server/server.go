@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/dghubble/sling"
+	"github.com/skyleronken/lemonclient/pkg/job"
 )
 
 var (
@@ -105,3 +106,11 @@ func (s *Server) Uptime() (float64, error) {
 // TODO: /lg/test
 
 // TODO: /lg
+
+// POST: /graph
+func (s *Server) CreateJob(j job.Job) error {
+
+	//jJson, err := json.Marshal(j)
+
+	return nil
+}

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/skyleronken/lemonclient/pkg/graph"
-	"github.com/skyleronken/lemonclient/pkg/server"
+	"github.com/skyleronken/lemonclient/pkg/permissions"
 	"github.com/skyleronken/lemonclient/pkg/utils"
 )
 
@@ -21,9 +21,9 @@ type Job struct {
 }
 
 type JobMetadata struct {
-	Priority uint8         `json:"priority,omitempty"`
-	Enabled  bool          `json:"enabled,omitempty"`
-	Roles    []server.User `json:"roles,omitempty"`
+	Priority uint8              `json:"priority,omitempty"`
+	Enabled  bool               `json:"enabled,omitempty"`
+	Roles    []permissions.User `json:"roles,omitempty"`
 }
 
 func (j Job) MarshalJSON() ([]byte, error) {
@@ -93,13 +93,13 @@ func (jm *JobMetadata) MarshalJSON() ([]byte, error) {
 	type Alias JobMetadata
 
 	serMeta := &struct {
-		Roles map[string]server.Permissions `json:"roles,omitempty"`
+		Roles map[string]permissions.Permissions `json:"roles,omitempty"`
 		*Alias
 	}{
 		Alias: (*Alias)(jm),
 	}
 
-	serMeta.Roles = map[string]server.Permissions{}
+	serMeta.Roles = map[string]permissions.Permissions{}
 	for _, v := range jm.Roles {
 		serMeta.Roles[v.Name] = v.Permissions
 	}
@@ -112,7 +112,7 @@ func (jm *JobMetadata) UnmarshalJSON(data []byte) error {
 	type Alias JobMetadata
 
 	aux := &struct {
-		Roles map[string]server.Permissions `json:"roles,omitempty"`
+		Roles map[string]permissions.Permissions `json:"roles,omitempty"`
 		*Alias
 	}{
 		Alias: (*Alias)(jm),
@@ -121,7 +121,7 @@ func (jm *JobMetadata) UnmarshalJSON(data []byte) error {
 	json.Unmarshal(data, &aux)
 
 	for k, v := range aux.Roles {
-		jm.Roles = append(jm.Roles, server.User{Name: k, Permissions: v})
+		jm.Roles = append(jm.Roles, permissions.User{Name: k, Permissions: v})
 	}
 
 	return nil

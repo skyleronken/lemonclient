@@ -1,4 +1,4 @@
-package server
+package permissions
 
 type User struct {
 	Name        string `json:"name,omitempty"`

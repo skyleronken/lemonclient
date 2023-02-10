@@ -3,12 +3,14 @@ package server
 import (
 	"os"
 	"testing"
+
+	"github.com/skyleronken/lemonclient/pkg/permissions"
 )
 
 var (
 	server  Server
 	version string
-	user    User
+	user    permissions.User
 )
 
 func setup() {
@@ -21,9 +23,9 @@ func setup() {
 		},
 	}
 
-	user = User{
+	user = permissions.User{
 		Name: "bob",
-		Permissions: Permissions{
+		Permissions: permissions.Permissions{
 			Reader: true,
 			Writer: false,
 		},

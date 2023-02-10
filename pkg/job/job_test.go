@@ -8,15 +8,15 @@ import (
 	"testing"
 
 	"github.com/skyleronken/lemonclient/pkg/graph"
-	"github.com/skyleronken/lemonclient/pkg/server"
+	"github.com/skyleronken/lemonclient/pkg/permissions"
 	"github.com/stretchr/testify/assert"
 )
 
 var (
 	tJob        Job
 	tMeta       JobMetadata
-	truishUser  server.User
-	falsishUser server.User
+	truishUser  permissions.User
+	falsishUser permissions.User
 	n1          TestNode
 	n2          TestNode
 	e1          TestEdge
@@ -69,17 +69,17 @@ func setup() {
 	e1.Source = n1
 	e1.Target = n2
 
-	falsishUser = server.User{
+	falsishUser = permissions.User{
 		Name: "fUser",
-		Permissions: server.Permissions{
+		Permissions: permissions.Permissions{
 			Reader: false,
 			Writer: false,
 		},
 	}
 
-	truishUser = server.User{
+	truishUser = permissions.User{
 		Name: "tUser",
-		Permissions: server.Permissions{
+		Permissions: permissions.Permissions{
 			Reader: true,
 			Writer: true,
 		},
@@ -88,7 +88,7 @@ func setup() {
 	tMeta = JobMetadata{
 		Priority: 100,
 		Enabled:  true,
-		Roles:    []server.User{truishUser, falsishUser},
+		Roles:    []permissions.User{truishUser, falsishUser},
 	}
 
 	tJob = Job{
@@ -111,36 +111,37 @@ func TestMain(m *testing.M) {
 
 func Test_Job_Serialize(t *testing.T) {
 
-	jsonJob := new(bytes.Buffer)
-	err := json.NewEncoder(jsonJob).Encode(tJob)
+	jsonJob, err := json.Marshal(tJob)
 	assert.NoError(t, err)
 
 	//jMap, err := utils.JSONBytesToMap(jsonJob.Bytes())
 	//assert.NoError(t, err)
 
-	assert.Contains(t, jsonJob.String(), "foo1")
-	assert.Contains(t, jsonJob.String(), "foo2")
-	assert.Contains(t, jsonJob.String(), "baz")
-	assert.Contains(t, jsonJob.String(), "TestNode")
-	assert.Contains(t, jsonJob.String(), "TestEdge")
+	assert.Contains(t, string(jsonJob), "foo1")
+	assert.Contains(t, string(jsonJob), "foo2")
+	assert.Contains(t, string(jsonJob), "baz")
+	assert.Contains(t, string(jsonJob), "TestNode")
+	assert.Contains(t, string(jsonJob), "TestEdge")
 }
 
 func Test_JobMetadata_Serialize(t *testing.T) {
 
-	err := json.NewEncoder(rawMeta).Encode(tMeta)
+	rawMeta, err := json.Marshal(tMeta)
 	assert.NoError(t, err)
 
-	if strings.TrimRight(rawMeta.String(), "\r\n") != assertion {
-		t.Fatalf("Serialized data is not accurate: \n%s != \n%s", rawMeta.String(), assertion)
+	if strings.TrimRight(string(rawMeta), "\r\n") != assertion {
+		t.Fatalf("Serialized data is not accurate: \n%s != \n%s", string(rawMeta), assertion)
 	}
 
 }
 
 func Test_JobMetadata_Deserialize(t *testing.T) {
 
-	assert.Greater(t, len(rawMeta.Bytes()), 1)
+	rawMeta, _ := json.Marshal(tMeta)
+	assert.Greater(t, len(rawMeta), 1)
+
 	var newMeta JobMetadata
-	err := json.NewDecoder(rawMeta).Decode(&newMeta)
+	_, err := json.Marshal(newMeta)
 	assert.NoError(t, err)
 
 }

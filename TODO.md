@@ -10,8 +10,8 @@
     - /lg/task/{job_uuid}/{task_uuid} DELETE
     - /lg/task/{job_uuid}/{task_uuid} POST
 - Job
-    - /graph GET
-    - /graph POST
+    - /graph GET [bulk]
+    - /graph POST 
     - /graph/{uuid} HEAD
     - /graph/{uuid} GET
     - /graph/{uuid} POST
