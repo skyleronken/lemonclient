@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/skyleronken/lemonclient/pkg/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -75,12 +76,22 @@ func Test_NodeToJson(t *testing.T) {
 	nJson, err := NodeToJson(tt1)
 	assert.NoError(err)
 
-	tMap, err := JSONBytesToMap(nJson)
+	tMap, err := utils.JSONBytesToMap(nJson)
 	assert.NoError(err)
 
 	assert.Equal(tt1.Type(), tMap["type"])
 	assert.Equal(tt1.Key(), tMap["value"])
 	assert.Equal(tt1.Foo, tMap["Foo"])
+
+	nJson, err = NodeToJson(tt1, true)
+	assert.NoError(err)
+
+	tMap, err = utils.JSONBytesToMap(nJson)
+	assert.NoError(err)
+
+	assert.Equal(tt1.Type(), tMap["type"])
+	assert.Equal(tt1.Key(), tMap["value"])
+	assert.NotContains(tMap, "Foo")
 
 }
 
@@ -90,11 +101,12 @@ func Test_EdgeToJson(t *testing.T) {
 	eJson, err := EdgeToJson(te1)
 	assert.NoError(err)
 
-	eMap, err := JSONBytesToMap(eJson)
+	eMap, err := utils.JSONBytesToMap(eJson)
 	assert.NoError(err)
 
 	assert.Equal(te1.Type(), eMap["type"])
 	assert.Equal(te1.Key(), eMap["value"])
+	assert.Equal(te1value, eMap["Foo"])
 
 	s := eMap["src"].(map[string]interface{})
 	d := eMap["dst"].(map[string]interface{})
@@ -106,4 +118,23 @@ func Test_EdgeToJson(t *testing.T) {
 	assert.Equal(tt2.Type(), d["type"])
 	assert.Equal(tt2.Key(), d["value"])
 	assert.Equal(tt2.Foo, d["Foo"])
+
+	eJson, err = EdgeToJson(te1, true)
+	assert.NoError(err)
+
+	eMap, err = utils.JSONBytesToMap(eJson)
+	assert.NoError(err)
+
+	assert.Equal(te1.Type(), eMap["type"])
+	assert.Equal(te1.Key(), eMap["value"])
+	assert.NotContains(eMap, "Foo")
+
+}
+
+func Test_EdgeToChain(t *testing.T) {
+	c, err := EdgeToChain(te1)
+	assert.NoError(t, err)
+	assert.Equal(t, tt1.Key(), c.Source.Key())
+	assert.Equal(t, tt2.Key(), c.Destination.Key())
+	assert.Equal(t, te1.Key(), c.Edge.Key())
 }

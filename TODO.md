@@ -1,9 +1,3 @@
-- Node
-    - /graph/{uuid}/node/{ID}
-    - Add Nodes to Job serialization
-- Edge
-    - /graph/{uuid}/edge/{ID}
-    - Add Edges to Job serialization
 - Server
     - /lg/test
     - /lg
@@ -41,6 +35,9 @@
 - Add graph-specific endpoint parameters for user and role
 - Add bulk endpoint query parameters
 - d3 stuff
-- keyvalue stuff
+- key value stuff
 - /lg/test
 - add 'id' to edge and node
+    - /graph/{uuid}/edge/{ID}
+    - /graph/{uuid}/node/{ID}
+- Unmarshall Job

@@ -79,3 +79,15 @@ eJson, err := EdgeToJson(bt)
 ```
 In the above example, eJson is a []byte containing the appropriate LG edge format
 
+## Chains
+
+Chains are just another convenience function for notating n()->e()->n(). When transformed to JSON the n() and e() objects will contain minimal values:
+
+```
+chain, err := EdgeToChain(edge1)
+cJson, err := ChainToJson(chain)
+
+// cJson[0] == source node JSON
+// cJson[1] == edge JSON
+// cJSon[2] == destinatio node JSON
+```
