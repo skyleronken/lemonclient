@@ -1,6 +1,6 @@
 - Server
-    - /lg/test
-    - /lg
+    - /lg/test  # later
+    - /lg       # later
 - Adapter
     - /lg/adapter/{adapter} GET/POST
     - /lg/adapter/{adapter}/{job_uuid} POST

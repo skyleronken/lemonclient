@@ -9,9 +9,10 @@ import (
 )
 
 var (
-	tt1 TestType
-	tt2 TestType
-	te1 TestEdge
+	n1 NodeInterface
+	n2 NodeInterface
+	e1 EdgeInterface
+	e2 EdgeInterface
 )
 
 var tt1value string = "bar"
@@ -19,49 +20,62 @@ var tt2value string = "baz"
 var te1value string = "bar"
 
 // Start - Test Node Type
-type TestType struct {
-	Node
+type GoodTestType struct {
+	NodeMembers
 	Foo string
 }
 
-func (t TestType) Type() string {
-	return "TestType"
-}
-
-func (t TestType) Key() string {
-	return t.Foo
-}
-
-type TestEdge struct {
-	Edge
+type GoodTestEdge struct {
+	EdgeMembers
 	Foo string
-}
-
-func (t TestEdge) Type() string {
-	return "TestEdge"
-}
-
-func (t TestEdge) Key() string {
-	return t.Foo
 }
 
 // End - Test Node Type
 
 func setup() {
 
-	tt1 = TestType{
+	tt1 := GoodTestType{
+		NodeMembers: NodeMembers{
+			Type:  "TestType",
+			Value: "TestTypeValue1",
+		},
 		Foo: tt1value,
 	}
 
-	tt2 = TestType{
+	tt2 := GoodTestType{
+		NodeMembers: NodeMembers{
+			ID:    "testid",
+			Type:  "TestType",
+			Value: "TestTypeValue2",
+		},
 		Foo: tt2value,
 	}
 
-	te1 = TestEdge{
+	n1, _ = Node(tt1)
+	n2, _ = Node(tt2)
+
+	te1 := GoodTestEdge{
+		EdgeMembers: EdgeMembers{
+			Type:   "TestEdge",
+			Source: n1,
+			Target: n2,
+		},
 		Foo: te1value,
 	}
-	te1.Source = tt1
-	te1.Target = tt2
+
+	te2 := GoodTestEdge{
+		EdgeMembers: EdgeMembers{
+			ID:     "testedge",
+			Type:   "TestEdge",
+			Source: n1,
+			Target: n2,
+		},
+		Foo: te1value,
+	}
+
+	e1, _ = Edge(te1)
+	e2, _ = Edge(te2)
+
 }
 
 func TestMain(m *testing.M) {
@@ -70,71 +84,130 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+func Test_StructToNode(t *testing.T) {
+	assert := assert.New(t)
+
+	type BadNode struct {
+		Foo string
+	}
+
+	_, err := Node(BadNode{Foo: "test"})
+	assert.Error(err)
+
+	type GoodNode struct {
+		NodeMembers
+		Foo string
+	}
+
+	_, err = Node(GoodNode{Foo: "test"})
+	assert.Error(err)
+
+	nm := NodeMembers{Type: "test", Value: "value"}
+	_, err = Node(GoodNode{NodeMembers: nm, Foo: "test"})
+	assert.NoError(err)
+
+}
+
+func Test_StructToEdge(t *testing.T) {
+	assert := assert.New(t)
+
+	type BadEdge struct {
+		Foo string
+	}
+
+	_, err := Edge(BadEdge{Foo: "test"})
+	assert.Error(err)
+
+	type GoodEdge struct {
+		EdgeMembers
+		Foo string
+	}
+
+	_, err = Edge(GoodEdge{Foo: "test"})
+	assert.Error(err)
+
+	nm := EdgeMembers{Type: "test"}
+	_, err = Edge(GoodEdge{EdgeMembers: nm, Foo: "test"})
+	assert.NoError(err)
+
+}
+
 func Test_NodeToJson(t *testing.T) {
 	assert := assert.New(t)
 
-	nJson, err := NodeToJson(tt1)
+	// Test no minimal
+	nJson, err := NodeToJson(n1, false)
 	assert.NoError(err)
 
 	tMap, err := utils.JSONBytesToMap(nJson)
 	assert.NoError(err)
 
-	assert.Equal(tt1.Type(), tMap["type"])
-	assert.Equal(tt1.Key(), tMap["value"])
-	assert.Equal(tt1.Foo, tMap["Foo"])
+	assert.Equal(n1.GetType(), tMap["type"])
+	assert.Equal(n1.GetValue(), tMap["value"])
+	assert.Equal(n1.GetProperties()["Foo"], tMap["Foo"])
 
-	nJson, err = NodeToJson(tt1, true)
+	// Test minimal w/o ID
+	nJson, err = NodeToJson(n1, true)
 	assert.NoError(err)
 
 	tMap, err = utils.JSONBytesToMap(nJson)
 	assert.NoError(err)
 
-	assert.Equal(tt1.Type(), tMap["type"])
-	assert.Equal(tt1.Key(), tMap["value"])
-	assert.NotContains(tMap, "Foo")
+	assert.Equal(n1.GetType(), tMap["type"])
+	assert.Equal(n1.GetValue(), tMap["value"])
+	assert.Contains(tMap, "Foo")
 
+	// Test minimal w/ ID
+	nJson, err = NodeToJson(n2, true)
+	assert.NoError(err)
+
+	tMap, err = utils.JSONBytesToMap(nJson)
+	assert.NoError(err)
+
+	assert.Equal(n2.GetType(), tMap["type"])
+	assert.Equal(n2.GetValue(), tMap["value"])
+	assert.Equal(n2.GetID(), tMap["ID"])
+	assert.NotContains(tMap, "Foo")
 }
 
 func Test_EdgeToJson(t *testing.T) {
 	assert := assert.New(t)
 
-	eJson, err := EdgeToJson(te1)
+	// minimal, no ID, include nodes
+	eJson, err := EdgeToJson(e1, false, true)
 	assert.NoError(err)
 
 	eMap, err := utils.JSONBytesToMap(eJson)
 	assert.NoError(err)
 
-	assert.Equal(te1.Type(), eMap["type"])
-	assert.Equal(te1.Key(), eMap["value"])
+	assert.Equal(e1.GetType(), eMap["type"])
 	assert.Equal(te1value, eMap["Foo"])
 
 	s := eMap["src"].(map[string]interface{})
 	d := eMap["tgt"].(map[string]interface{})
 
-	assert.Equal(tt1.Type(), s["type"])
-	assert.Equal(tt1.Key(), s["value"])
-	assert.Equal(tt1.Foo, s["Foo"])
+	assert.Equal(n1.GetType(), s["type"])
+	assert.Equal(n1.GetValue(), s["value"])
 
-	assert.Equal(tt2.Type(), d["type"])
-	assert.Equal(tt2.Key(), d["value"])
-	assert.Equal(tt2.Foo, d["Foo"])
+	assert.Equal(n2.GetType(), d["type"])
+	assert.Equal(n2.GetValue(), d["value"])
 
-	eJson, err = EdgeToJson(te1, true)
+	// minimal, ID, no ndes
+	eJson, err = EdgeToJson(e2, true, false)
 	assert.NoError(err)
 
 	eMap, err = utils.JSONBytesToMap(eJson)
 	assert.NoError(err)
 
-	assert.Equal(te1.Type(), eMap["type"])
-	assert.Equal(te1.Key(), eMap["value"])
+	assert.Equal(e2.GetType(), eMap["type"])
 	assert.NotContains(eMap, "Foo")
 
 }
 
 func Test_EdgeToChain(t *testing.T) {
-	c, err := EdgeToChain(te1)
+	c, err := EdgeToChain(e1)
 	assert.NoError(t, err)
-	assert.Equal(t, tt1.Key(), c.Source.Key())
-	assert.Equal(t, tt2.Key(), c.Destination.Key())
-	assert.Equal(t, te1.Key(), c.Edge.Key())
+	assert.Equal(t, n1.GetValue(), (c.Source).GetValue())
+	assert.Equal(t, n2.GetValue(), (c.Destination).GetValue())
+	assert.Equal(t, e1.GetType(), (c.Edge).GetType())
 }

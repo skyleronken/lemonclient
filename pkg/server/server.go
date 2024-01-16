@@ -1,3 +1,4 @@
+// This package acts as the Client for LemonGrenade
 package server
 
 import (
@@ -26,15 +27,15 @@ type ServerDetails struct {
 	Port    int
 }
 
+type NewJobId struct {
+	ID   string `json:"id"`
+	UUID string `json:"uuid"`
+}
+
 type ServerError struct {
 	Code    int    `json:"code"`
 	Reason  string `json:"reason"`
 	Message string `json:"message"`
-}
-
-type NewJobId struct {
-	ID   string `json:"id"`
-	UUID string `json:"uuid"`
 }
 
 func (e *ServerError) Error() string {
@@ -43,11 +44,13 @@ func (e *ServerError) Error() string {
 
 // Result types
 
+// ServerStatus result type
 type ServerStatus struct {
 	Version string  `json:"version,omitempty"`
 	Uptime  float64 `json:"uptime,omitempty"`
 }
 
+// Private function which formats the base request
 func (s *Server) newRequest() *sling.Sling {
 	// Create a client if none
 	if s.Client == nil {
@@ -72,6 +75,7 @@ func (s *Server) newRequest() *sling.Sling {
 
 // Helpers
 
+// Private helper to set GETs
 func (s *Server) sendGet(path string, params interface{}, resultStruct interface{}) (*http.Response, error) {
 
 	errorStruct := new(ServerError)
@@ -87,6 +91,7 @@ func (s *Server) sendGet(path string, params interface{}, resultStruct interface
 	return resp, err
 }
 
+// Private helper to send POSTs
 func (s *Server) sendPost(path string, params interface{}, body interface{}, resultStruct interface{}) (*http.Response, error) {
 
 	errorStruct := new(ServerError)
@@ -104,19 +109,21 @@ func (s *Server) sendPost(path string, params interface{}, body interface{}, res
 
 // Public Methods
 
-// /lg/status
-
+// This function retrieves the status of the server
+// GET /lg/status
 func (s *Server) Status() (ServerStatus, error) {
 	status := ServerStatus{}
 	_, err := s.sendGet(LG_SERVER_STATUS, nil, &status)
 	return status, err
 }
 
+// This function retrieves the version from the server by calling *Server.Status() and returning the Version
 func (s *Server) Version() (string, error) {
 	status, err := s.Status()
 	return status.Version, err
 }
 
+// This function retrieves the uptime from the server by calling *Server.Status() adn returning the Uptime
 func (s *Server) Uptime() (float64, error) {
 	status, err := s.Status()
 	return status.Uptime, err
@@ -126,8 +133,13 @@ func (s *Server) Uptime() (float64, error) {
 
 // TODO: /lg
 
-// POST: /graph
+// This function is used to create new job
+// POST /graph
 func (s *Server) CreateJob(j job.Job) (NewJobId, error) {
+
+	// TODO: validate job
+	// - No edges should be provided in new jobs; idiomatically create them with chains
+	// - What happens if chain contains duplicate nodes?
 
 	newJob := NewJobId{}
 

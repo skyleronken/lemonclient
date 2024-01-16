@@ -17,9 +17,9 @@ var (
 	tMeta       JobMetadata
 	truishUser  permissions.User
 	falsishUser permissions.User
-	n1          TestNode
-	n2          TestNode
-	e1          TestEdge
+	n1          graph.NodeInterface
+	n2          graph.NodeInterface
+	e1          graph.EdgeInterface
 
 	rawMeta   *bytes.Buffer
 	assertion string
@@ -27,47 +27,43 @@ var (
 
 // Test types
 type TestNode struct {
-	graph.Node
+	graph.NodeMembers
 	Foo string
 }
 
-func (t TestNode) Type() string {
-	return "TestNode"
-}
-
-func (t TestNode) Key() string {
-	return t.Foo
-}
-
 type TestEdge struct {
-	graph.Edge
+	graph.EdgeMembers
 	Bar string
-}
-
-func (t TestEdge) Type() string {
-	return "TestEdge"
-}
-
-func (t TestEdge) Key() string {
-	return t.Bar
 }
 
 // end test types
 
 func Setup() {
 
-	n1 = TestNode{
+	n1, _ = graph.Node(TestNode{
+		NodeMembers: graph.NodeMembers{
+			Type:  "TestNode",
+			Value: "foo1",
+		},
 		Foo: "foo1",
-	}
-	n2 = TestNode{
-		Foo: "foo2",
-	}
-	e1 = TestEdge{
-		Bar: "baz",
-	}
+	})
 
-	e1.Source = n1
-	e1.Target = n2
+	n2, _ = graph.Node(TestNode{
+		NodeMembers: graph.NodeMembers{
+			Type:  "TestNode",
+			Value: "foo2",
+		},
+		Foo: "foo2",
+	})
+
+	e1, _ = graph.Edge(TestEdge{
+		EdgeMembers: graph.EdgeMembers{
+			Type:   "TestEdge",
+			Source: n1,
+			Target: n2,
+		},
+		Bar: "baz",
+	})
 
 	falsishUser = permissions.User{
 		Name: "fUser",

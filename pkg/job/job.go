@@ -11,7 +11,7 @@ import (
 // Structs
 
 type Job struct {
-	Id     string                `json:"id"`
+	ID     string                `json:"id,omitempty"`
 	Meta   JobMetadata           `json:"meta,omitempty"`
 	Seed   bool                  `json:"seed,omitempty"`
 	Nodes  []graph.NodeInterface `json:"nodes,omitempty"`
@@ -40,7 +40,7 @@ func (j Job) MarshalJSON() ([]byte, error) {
 
 	for e := range j.Edges {
 		curEdge := j.Edges[e]
-		edgeJson, _ := graph.EdgeToJson(curEdge)
+		edgeJson, _ := graph.EdgeToJson(curEdge, true, false)
 		edgeMap, err := utils.JSONBytesToMap(edgeJson)
 		if err != nil {
 			return nil, err
@@ -50,7 +50,7 @@ func (j Job) MarshalJSON() ([]byte, error) {
 
 	for n := range j.Nodes {
 		curNode := j.Nodes[n]
-		nodeJson, _ := graph.NodeToJson(curNode)
+		nodeJson, _ := graph.NodeToJson(curNode, true)
 		nodeMap, err := utils.JSONBytesToMap(nodeJson)
 		if err != nil {
 			return nil, err
@@ -61,17 +61,20 @@ func (j Job) MarshalJSON() ([]byte, error) {
 	for c := range j.Chains {
 		curChain := j.Chains[c]
 		chainJson, err := graph.ChainToJson(curChain)
-		for sc := range chainJson {
-			scMap, _ := utils.JSONBytesToMap(chainJson[sc])
-			tJob.Chains[c] = append(tJob.Chains[c], scMap)
-		}
+		scArray := []map[string]interface{}{}
+		for chainPart := range chainJson {
+			scMap, _ := utils.JSONBytesToMap(chainJson[chainPart])
+			if err != nil {
+				return nil, err
+			}
+			scArray = append(scArray, scMap)
 
-		if err != nil {
-			return nil, err
 		}
+		tJob.Chains = append(tJob.Chains, scArray)
 	}
 
-	return json.Marshal(tJob)
+	d, err := json.Marshal(tJob)
+	return d, err
 
 }
 

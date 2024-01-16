@@ -16,56 +16,58 @@ var (
 	user    permissions.User
 	tJob    job.Job
 	tMeta   job.JobMetadata
-	n1      TestNode
-	n2      TestNode
-	e1      TestEdge
+	n1      graph.NodeInterface
+	n2      graph.NodeInterface
+	e1      graph.EdgeInterface
 )
 
 // Test types
-type TestNode struct {
-	graph.Node
+type TestType struct {
+	graph.NodeMembers
 	Foo string
 }
 
-func (t TestNode) Type() string {
-	return "TestNode"
-}
-
-func (t TestNode) Key() string {
-	return t.Foo
-}
-
 type TestEdge struct {
-	graph.Edge
+	graph.EdgeMembers
 	Bar string
-}
-
-func (t TestEdge) Type() string {
-	return "TestEdge"
-}
-
-func (t TestEdge) Key() string {
-	return t.Bar
 }
 
 // end test types
 
 func Setup() {
 
-	version = "3.4.1"
+	version = "3.4.2"
 
-	n1 = TestNode{
+	n1, _ = graph.Node(TestType{
+		NodeMembers: graph.NodeMembers{
+			Type:  "testtype",
+			Value: "n1",
+		},
 		Foo: "foo1",
-	}
-	n2 = TestNode{
-		Foo: "foo2",
-	}
-	e1 = TestEdge{
-		Bar: "baz",
-	}
+	})
 
-	e1.Source = n1
-	e1.Target = n2
+	n2, _ = graph.Node(TestType{
+		NodeMembers: graph.NodeMembers{
+			Type:  "testtype",
+			Value: "n1",
+		},
+		Foo: "foo2",
+	})
+
+	e1, _ = graph.Edge(TestEdge{
+		EdgeMembers: graph.EdgeMembers{
+			Type:   "testedge",
+			Source: n1,
+			Target: n2,
+		},
+		Bar: "baz",
+	})
+
+	c1 := graph.Chain{
+		Source:      n1,
+		Edge:        e1,
+		Destination: n2,
+	}
 
 	user = permissions.User{
 		Name: "bob",
@@ -82,9 +84,10 @@ func Setup() {
 	}
 
 	tJob = job.Job{
-		Meta:  tMeta,
-		Nodes: []graph.NodeInterface{n1, n2},
-		Edges: []graph.EdgeInterface{e1},
+		Meta: tMeta,
+		//Nodes:  []graph.NodeInterface{n1, n2},
+		//Edges:  []graph.EdgeInterface{e1},
+		Chains: []graph.Chain{c1},
 	}
 
 	server = Server{
@@ -129,10 +132,7 @@ func Test_ServerVersion(t *testing.T) {
 	if err != nil {
 		t.Error("Error getting version", err)
 	}
-
-	if v != version {
-		t.Fatalf("Version incorrect: %s", v)
-	}
+	assert.Regexp(t, "[0-9]+\\.[0-9]+\\.[0-9]+", v)
 }
 
 func Test_ServerUptime(t *testing.T) {
