@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/dghubble/sling"
+	"github.com/skyleronken/lemonclient/pkg/adapter"
 	"github.com/skyleronken/lemonclient/pkg/job"
 )
 
@@ -30,6 +31,13 @@ type ServerDetails struct {
 type NewJobId struct {
 	ID   string `json:"id"`
 	UUID string `json:"uuid"`
+}
+
+type TaskMetadata struct {
+	Query    string `json:"query"`
+	Task     string `json:"task"`
+	Job      string `json:"uuid"`
+	Location string `json:"location"`
 }
 
 type ServerError struct {
@@ -148,6 +156,23 @@ func (s *LGClient) Uptime() (float64, error) {
 // TODO: /lg/test
 
 // TODO: /lg
+
+// This function is used to poll for new adapter tasks
+// GET /lg/adapter/{adapter}
+func (s *LGClient) PollAdapter(a adapter.Adapter) (TaskMetadata, []interface{}, error) {
+
+	adapterUrl := fmt.Sprintf("/lg/adapter/%s", a.Name)
+
+	var responses []interface{}
+	_, err := s.sendGet(adapterUrl, a.AdapterParamters, responses)
+
+	metadata, ok := responses[0].(TaskMetadata)
+	if !ok {
+		return metadata, nil, fmt.Errorf("failed to parse task metadata")
+	}
+
+	return metadata, responses[1:], err
+}
 
 // This function is used to create new job
 // POST /graph

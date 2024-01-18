@@ -8,7 +8,12 @@ type Task struct {
 	State     string      `json:"state"`
 }
 
-type AdapterConfig struct {
+type Adapter struct {
+	Name string
+	AdapterParamters
+}
+
+type AdapterParamters struct {
 	Query           string   `json:"query"`
 	Limit           uint64   `json:"limit"`
 	Timeout         int      `json:"timeout"`

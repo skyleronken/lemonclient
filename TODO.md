@@ -2,7 +2,7 @@
     - /lg/test  # later
     - /lg       # later
 - Adapter
-    - /lg/adapter/{adapter} GET/POST
+    - /lg/adapter/{adapter} POST
     - /lg/adapter/{adapter}/{job_uuid} POST
 - Task
     - /lg/task/{job_uuid}/{task_uuid} GET
