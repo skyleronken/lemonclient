@@ -1,4 +1,4 @@
-package server
+package client
 
 import (
 	"os"
@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	server  Server
+	server  LGClient
 	version string
 	user    permissions.User
 	tJob    job.Job
@@ -90,7 +90,7 @@ func Setup() {
 		Chains: []graph.Chain{c1},
 	}
 
-	server = Server{
+	server = LGClient{
 		ServerDetails: ServerDetails{
 			Address: "127.0.0.1",
 			Port:    8000,

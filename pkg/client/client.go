@@ -1,5 +1,5 @@
 // This package acts as the Client for LemonGrenade
-package server
+package client
 
 import (
 	"fmt"
@@ -16,7 +16,7 @@ var (
 
 // Server structures
 
-type Server struct {
+type LGClient struct {
 	ServerDetails
 	Client *http.Client
 	sling  *sling.Sling
@@ -51,7 +51,7 @@ type ServerStatus struct {
 }
 
 // Private function which formats the base request
-func (s *Server) newRequest() *sling.Sling {
+func (s *LGClient) newRequest() *sling.Sling {
 	// Create a client if none
 	if s.Client == nil {
 		newClient := http.Client{
@@ -75,8 +75,24 @@ func (s *Server) newRequest() *sling.Sling {
 
 // Helpers
 
+func CreateClient(host string, port int) (*LGClient, error) {
+
+	s := &LGClient{
+		ServerDetails: ServerDetails{
+			Address: host,
+			Port:    port,
+		},
+		Client: &http.Client{
+			Timeout: 30 * time.Second,
+		},
+		sling: nil,
+	}
+
+	return s, nil
+}
+
 // Private helper to set GETs
-func (s *Server) sendGet(path string, params interface{}, resultStruct interface{}) (*http.Response, error) {
+func (s *LGClient) sendGet(path string, params interface{}, resultStruct interface{}) (*http.Response, error) {
 
 	errorStruct := new(ServerError)
 	resp, err := s.newRequest().Get(path).QueryStruct(params).Receive(resultStruct, errorStruct)
@@ -92,7 +108,7 @@ func (s *Server) sendGet(path string, params interface{}, resultStruct interface
 }
 
 // Private helper to send POSTs
-func (s *Server) sendPost(path string, params interface{}, body interface{}, resultStruct interface{}) (*http.Response, error) {
+func (s *LGClient) sendPost(path string, params interface{}, body interface{}, resultStruct interface{}) (*http.Response, error) {
 
 	errorStruct := new(ServerError)
 	resp, err := s.newRequest().Post(path).QueryStruct(params).BodyJSON(body).Receive(resultStruct, errorStruct)
@@ -111,20 +127,20 @@ func (s *Server) sendPost(path string, params interface{}, body interface{}, res
 
 // This function retrieves the status of the server
 // GET /lg/status
-func (s *Server) Status() (ServerStatus, error) {
+func (s *LGClient) Status() (ServerStatus, error) {
 	status := ServerStatus{}
 	_, err := s.sendGet(LG_SERVER_STATUS, nil, &status)
 	return status, err
 }
 
 // This function retrieves the version from the server by calling *Server.Status() and returning the Version
-func (s *Server) Version() (string, error) {
+func (s *LGClient) Version() (string, error) {
 	status, err := s.Status()
 	return status.Version, err
 }
 
 // This function retrieves the uptime from the server by calling *Server.Status() adn returning the Uptime
-func (s *Server) Uptime() (float64, error) {
+func (s *LGClient) Uptime() (float64, error) {
 	status, err := s.Status()
 	return status.Uptime, err
 }
@@ -135,7 +151,7 @@ func (s *Server) Uptime() (float64, error) {
 
 // This function is used to create new job
 // POST /graph
-func (s *Server) CreateJob(j job.Job) (NewJobId, error) {
+func (s *LGClient) CreateJob(j job.Job) (NewJobId, error) {
 
 	// TODO: validate job
 	// - No edges should be provided in new jobs; idiomatically create them with chains
