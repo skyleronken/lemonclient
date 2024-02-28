@@ -1,30 +1,29 @@
 package adapter
 
-type Task struct {
-	Timestamp uint64      `json:"timestamp"`
-	Timeout   int         `json:"timeout"`
-	Retries   int         `json:"retries"`
-	Details   interface{} `json:"details"`
-	State     string      `json:"state"`
-}
-
 type Adapter struct {
 	Name string
 	AdapterOpts
 }
 
+type AdaperBehaviors struct {
+	Query   string `json:"query,omitempty"`
+	Limit   uint64 `json:"limit,omitempty"`
+	Timeout int    `json:"timeout,omitempty"`
+}
+
 type AdapterOpts struct {
-	Query    string `json:"query,omitempty"`
+	AdaperBehaviors
 	Filter   string `json:"filter,omitempty"`
-	Limit    uint64 `json:"limit,omitempty"`
-	Timeout  int    `json:"timeout,omitempty"`
 	Enabled  bool   `json:"enabled,omitempty"`
 	Autotask bool   `json:"autotask,omitempty"`
 	Position uint64 `json:"pos,omitempty"`
-	// internal
-	// IgnoreTaskUuids []string `json:"ignore,omitempty"`
-	// JobUuids        []string `json:"uuid,omitempty"`
-	// Meta            []string `json:"meta,omitempty"`
+}
+
+type AdapterPollingOpts struct {
+	AdaperBehaviors
+	IgnoreTaskUuids []string `json:"ignore,omitempty"`
+	JobUuids        []string `json:"uuid,omitempty"`
+	//Meta            []string `json:"meta,omitempty"` // being removed from LG
 }
 
 type AdapterOptFunc func(*AdapterOpts)

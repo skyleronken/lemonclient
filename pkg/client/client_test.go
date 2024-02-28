@@ -20,6 +20,8 @@ var (
 	n1 graph.NodeInterface
 	n2 graph.NodeInterface
 	e1 graph.EdgeInterface
+	a1 *adapter.Adapter
+	a2 *adapter.Adapter
 )
 
 // Test types
@@ -91,8 +93,12 @@ func Setup() {
 	// 	Chains: []graph.Chain{c1},
 	// }
 
-	a1 := adapter.ConfigureAdapter("ADAPTER1",
+	a1 = adapter.ConfigureAdapter("ADAPTER_NODE",
 		adapter.WithQuery("n()"),
+	)
+
+	a2 = adapter.ConfigureAdapter("ADAPTER_CHAIN",
+		adapter.WithQuery("n()->e()->n()"),
 	)
 
 	tJob = *job.NewJob(
@@ -113,9 +119,14 @@ func Setup() {
 
 }
 
+func Cleanup() {
+
+}
+
 func TestMain(m *testing.M) {
 	Setup()
 	code := m.Run()
+	Cleanup()
 	os.Exit(code)
 }
 
@@ -174,4 +185,17 @@ func Test_GetJobGraphs(t *testing.T) {
 	latest := jobGraphs[len(jobGraphs)-1]
 	assert.NoError(t, err)
 	assert.Equal(t, 2, latest.TotalNodes)
+}
+
+func Test_PollAdapter(t *testing.T) {
+	metadata, _, err := server.PollAdapter(*a1, adapter.AdapterPollingOpts{})
+	assert.NoError(t, err)
+	assert.Equal(t, a1.Name, metadata.Adapter)
+	assert.Equal(t, 2, metadata.Length)
+
+	// TODO: evaluate the nodes that return
+	// TODO: evaluate if the adapter query is for a chain. How does that look?
+	// TODO: ignore list respeceted
+	// TODO: job uuids respected
+
 }

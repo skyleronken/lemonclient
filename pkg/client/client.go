@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/dghubble/sling"
+	"github.com/mitchellh/mapstructure"
 	"github.com/skyleronken/lemonclient/pkg/adapter"
 	"github.com/skyleronken/lemonclient/pkg/job"
 )
@@ -37,10 +38,17 @@ type NewJobId struct {
 }
 
 type TaskMetadata struct {
-	Query    string `json:"query"`
-	Task     string `json:"task"`
-	Job      string `json:"uuid"`
-	Location string `json:"location"`
+	Task      string  `json:"task"`
+	Adapter   string  `json:"adapter"`
+	Query     string  `json:"query"`
+	State     string  `json:"state"`
+	Retries   int     `json:"retrties"`
+	Timestamp float64 `json:"timestamp"`
+	Timeout   int     `json:"timeout"`
+	Details   string  `json:"details"`
+	Length    int     `json:"length"`
+	Location  string  `json:"location"`
+	Job       string  `json:"uuid"`
 }
 
 type JobGraph struct {
@@ -206,18 +214,59 @@ func (s *LGClient) Uptime() (float64, error) {
 }
 
 // This function is used to poll for new adapter tasks
-// GET /lg/adapter/{adapter}
-func (s *LGClient) PollAdapter(a adapter.Adapter) (TaskMetadata, []interface{}, error) {
+// POST /lg/adapter/{adapter}
+func (s *LGClient) PollAdapter(a adapter.Adapter, p adapter.AdapterPollingOpts) (TaskMetadata, []interface{}, error) {
 
 	adapterUrl := fmt.Sprintf("/lg/adapter/%s", a.Name)
 
 	var responses []interface{}
-	_, err := s.sendGet(adapterUrl, a.AdapterOpts, responses)
+	_, err := s.sendPost(adapterUrl, nil, p, &responses)
 
-	metadata, ok := responses[0].(TaskMetadata)
-	if !ok {
+	/*
+		example response:
+		[
+			{
+				"task": "78ab8cb7-d608-11ee-97e3-0242ac110002",
+				"adapter": "ADAPTER1",
+				"query": "n()",
+				"state": "active",
+				"retries": 0,
+				"timestamp": 1709104236.8,
+				"timeout": 60,
+				"details": null,
+				"length": 2,
+				"location": "/lg/task/17befca2-d605-11ee-b06f-0242ac110002/78ab8cb7-d608-11ee-97e3-0242ac110002",
+				"uuid": "17befca2-d605-11ee-b06f-0242ac110002"
+			},
+			[
+				{
+				"ID": 4,
+				"type": "testtype",
+				"value": "n1",
+				"Foo": "foo1",
+				"last_modified": "2024-02-28T06:46:25.667259Z"
+				}
+			],
+			[
+				{
+				"ID": 6,
+				"type": "testtype",
+				"value": "n2",
+				"Foo": "foo2",
+				"last_modified": "2024-02-28T06:46:25.667259Z"
+				}
+			]
+		]
+	*/
+
+	var metadata TaskMetadata
+	err = mapstructure.Decode(responses[0], &metadata)
+
+	if err != nil {
 		return metadata, nil, fmt.Errorf("failed to parse task metadata")
 	}
+
+	// TODO: Parse remaining responses into nodes/edges/chains/etc
 
 	return metadata, responses[1:], err
 }
@@ -279,4 +328,12 @@ func (s *LGClient) GetJobs() (JobGraphs, error) {
 
 // TODO: GET /graph?q= ; query all graphs for specific entities
 
-// TODO: GET /lg ; list of graphs with outstanding work
+// TODO: GET /lg ; list of adapters and their queries that have outstanding work
+
+// TODO: GET /lg/config/{job_uuid} ; get adapter configs and status for a job
+
+// TODO: POST /lg/config/{job_uuid} ; update the config for a jobs adapters
+
+// TODO: GET /lg/config/{job_uuid}/{adapter} ; get configs for a specific jobs specific adapter
+
+// TODOO: POST /lg/config/{job_uuid}/{adapter} ; update the cnfigs for a specifi jobs specific adapter
