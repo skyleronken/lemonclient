@@ -218,9 +218,13 @@ func (s *LGClient) Uptime() (float64, error) {
 func (s *LGClient) PollAdapter(a adapter.Adapter, p adapter.AdapterPollingOpts) (TaskMetadata, []interface{}, error) {
 
 	adapterUrl := fmt.Sprintf("/lg/adapter/%s", a.Name)
+	var metadata TaskMetadata
 
 	var responses []interface{}
 	_, err := s.sendPost(adapterUrl, nil, p, &responses)
+	if err != nil {
+		return metadata, nil, err
+	}
 
 	/*
 		example response:
@@ -259,7 +263,6 @@ func (s *LGClient) PollAdapter(a adapter.Adapter, p adapter.AdapterPollingOpts) 
 		]
 	*/
 
-	var metadata TaskMetadata
 	err = mapstructure.Decode(responses[0], &metadata)
 
 	if err != nil {

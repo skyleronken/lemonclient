@@ -20,7 +20,7 @@ var (
 	n1          graph.NodeInterface
 	n2          graph.NodeInterface
 	e1          graph.EdgeInterface
-	c1          *graph.Chain
+	c1          graph.ChainInterface
 
 	rawMeta   *bytes.Buffer
 	assertion string
@@ -97,7 +97,7 @@ func Setup() {
 	// }
 
 	tJob = *NewJob(
-		WithChains(*c1),
+		WithChains(c1),
 		WithPriority(100),
 		WithEnabled(true),
 		WithRoles(truishUser, falsishUser),

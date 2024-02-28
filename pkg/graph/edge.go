@@ -139,13 +139,15 @@ func EdgeToJson(e EdgeInterface, minimal bool, includeNodes bool) ([]byte, error
 	return json.Marshal(eMap)
 }
 
-func EdgeToChain(e EdgeInterface) (*Chain, error) {
+func EdgeToChain(e EdgeInterface) (ChainInterface, error) {
 
-	c := Chain{
-		Source:      e.GetSource(),
-		Destination: e.GetTarget(),
-		Edge:        e,
-	}
+	// c := Chain{
+	// 	Source:      e.GetSource(),
+	// 	Destination: e.GetTarget(),
+	// 	Edge:        e,
+	// }
+	//return c, nil
 
-	return &c, nil
+	return CreateChain(e.GetSource(), e, e.GetTarget())
+
 }

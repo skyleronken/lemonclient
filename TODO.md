@@ -1,6 +1,3 @@
-- Ask Nate about depth of chains
-    - If n depth, implement chains structs as a liist of generics (Node|Edge)
-    - Test and integrate change
 - Parse out adapter task values
 - Build test adapter
 - Compile adapter shared objects

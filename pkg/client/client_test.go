@@ -66,11 +66,13 @@ func Setup() {
 		Bar: "baz",
 	})
 
-	c1 := graph.Chain{
-		Source:      n1,
-		Edge:        e1,
-		Destination: n2,
-	}
+	// c1 := graph.Chain{
+	// 	Source:      n1,
+	// 	Edge:        e1,
+	// 	Destination: n2,
+	// }
+
+	c1, _ := graph.CreateChain(n1, e1, n2)
 
 	user = permissions.User{
 		Name: "bob",

@@ -16,7 +16,7 @@ type Opts struct {
 	Meta     JobMetadata                    `json:"meta,omitempty"`
 	Seed     bool                           `json:"seed,omitempty"`
 	Nodes    []graph.NodeInterface          `json:"nodes,omitempty"`
-	Chains   []graph.Chain                  `json:"chains,omitempty"`
+	Chains   []graph.ChainInterface         `json:"chains,omitempty"`
 	Adapters map[string]adapter.AdapterOpts `json:"adapters,omitempty"` // hypothetically these could be a map of an array of adapterparameters for secondary queries
 	//Edges  []graph.EdgeInterface `json:"edges,omitempty"` // Non idiomatic way. Use chains instead for creation
 }
@@ -86,7 +86,7 @@ func WithSeed(seed bool) OptFunc {
 	}
 }
 
-func WithChains(chains ...graph.Chain) OptFunc {
+func WithChains(chains ...graph.ChainInterface) OptFunc {
 	// TODO: validate job
 	// - What happens if chain contains duplicate nodes?
 	return func(opts *Opts) {

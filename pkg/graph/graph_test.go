@@ -207,7 +207,26 @@ func Test_EdgeToJson(t *testing.T) {
 func Test_EdgeToChain(t *testing.T) {
 	c, err := EdgeToChain(e1)
 	assert.NoError(t, err)
-	assert.Equal(t, n1.GetValue(), (c.Source).GetValue())
-	assert.Equal(t, n2.GetValue(), (c.Destination).GetValue())
-	assert.Equal(t, e1.GetType(), (c.Edge).GetType())
+
+	src, ok := c.GetElements()[0].(NodeInterface)
+	assert.True(t, ok)
+	edge, ok := c.GetElements()[1].(EdgeInterface)
+	assert.True(t, ok)
+	dst, ok := c.GetElements()[2].(NodeInterface)
+	assert.True(t, ok)
+
+	assert.Equal(t, n1.GetValue(), (src).GetValue())
+	assert.Equal(t, n2.GetValue(), (dst).GetValue())
+	assert.Equal(t, e1.GetType(), (edge).GetType())
+}
+
+func Test_BadChains(t *testing.T) {
+
+	// not enough elements
+	_, err := CreateChain(n1, e1)
+	assert.Error(t, err)
+
+	// not the right order of elements
+	_, err = CreateChain(e1, n2, n1)
+	assert.Error(t, err)
 }
