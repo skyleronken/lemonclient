@@ -212,7 +212,7 @@ func (s *LGClient) PollAdapter(a adapter.Adapter) (TaskMetadata, []interface{}, 
 	adapterUrl := fmt.Sprintf("/lg/adapter/%s", a.Name)
 
 	var responses []interface{}
-	_, err := s.sendGet(adapterUrl, a.AdapterParamters, responses)
+	_, err := s.sendGet(adapterUrl, a.AdapterOpts, responses)
 
 	metadata, ok := responses[0].(TaskMetadata)
 	if !ok {
@@ -243,9 +243,40 @@ func (s *LGClient) GetJobs() (JobGraphs, error) {
 	return jobGraphs, err
 }
 
-// This function queries all nodes/edges in all graphs
-func (s *LGClient) QueryAllGraphs() {
+// TODO: GET /graph/{uuid} ; get entire detail of a graph (including all edges and nodes)
 
-}
+// TODO: POST /graph/{uuid} ; merge data into an existing graph
 
-// TODO: /lg
+// TODO: PUT /graph/{uuid} ; upload a graph in binary format
+
+// TODO: DELETE /graph/{uuid} ; delete a graph
+
+// TODO: GET /graph/{uuid}/meta ; get a graphs metadata
+
+// TODO: PUT /graph/{uuid}/meta ; merge in graph metadata
+
+// TODO: GET /graph/{uuid}/seeds ; list of payloads which were marked as seeds in metadata when posted
+
+// TODO: GET /graph/{uuid}/status ; get graph metadata, size, node/edge count, create date
+
+// TODO: GET /graph/{uuid}/node/{ID} ; get info about specifi node in a graph
+
+// TODO: PUT /graph/{uuid}/node/{ID} ; update info about specific node in a graph
+
+// TODO: GET /graph/{uuid}/edge/{ID} ; get info about specifi edge in a graph
+
+// TODO: PUT /graph/{uuid}/edge/{ID} ; update info about specific edge in a graph
+
+// TODO: PUT /reset/{uuid} ; reset the entire graph to whatever data was marked as seed
+
+// TODO: POST /graph/exec ; execute a python function against all graphs
+
+// TODO: POST /graph/{uuid}/exec ; execute a python function against a specific graph
+
+// TODO: GET /view/{uuid} ; get d3 version of graph
+
+// TODO: GET /d3/{uuid} ; stream d3 json of a graph
+
+// TODO: GET /graph?q= ; query all graphs for specific entities
+
+// TODO: GET /lg ; list of graphs with outstanding work

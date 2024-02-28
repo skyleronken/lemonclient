@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/skyleronken/lemonclient/pkg/adapter"
 	"github.com/skyleronken/lemonclient/pkg/graph"
 	"github.com/skyleronken/lemonclient/pkg/job"
 	"github.com/skyleronken/lemonclient/pkg/permissions"
@@ -90,11 +91,16 @@ func Setup() {
 	// 	Chains: []graph.Chain{c1},
 	// }
 
+	a1 := adapter.ConfigureAdapter("ADAPTER1",
+		adapter.WithQuery("n()"),
+	)
+
 	tJob = *job.NewJob(
 		job.WithPriority(100),
 		job.WithEnabled(true),
 		job.WithRoles(user),
 		job.WithChains(c1),
+		job.WithAdapters(*a1),
 	)
 
 	server = LGClient{

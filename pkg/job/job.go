@@ -3,6 +3,7 @@ package job
 import (
 	"encoding/json"
 
+	"github.com/skyleronken/lemonclient/pkg/adapter"
 	"github.com/skyleronken/lemonclient/pkg/graph"
 	"github.com/skyleronken/lemonclient/pkg/permissions"
 	"github.com/skyleronken/lemonclient/pkg/utils"
@@ -11,13 +12,13 @@ import (
 // Structs
 
 type Opts struct {
-	ID    string                `json:"id,omitempty"`
-	Meta  JobMetadata           `json:"meta,omitempty"`
-	Seed  bool                  `json:"seed,omitempty"`
-	Nodes []graph.NodeInterface `json:"nodes,omitempty"`
-	//Edges  []graph.EdgeInterface `json:"edges,omitempty"` // Non idiomatic way. Use chains instead
-	Chains []graph.Chain `json:"chains,omitempty"`
-	//Adapters map[string]adapter.Adapter `json:"adapters,omitempty"`
+	ID       string                         `json:"id,omitempty"`
+	Meta     JobMetadata                    `json:"meta,omitempty"`
+	Seed     bool                           `json:"seed,omitempty"`
+	Nodes    []graph.NodeInterface          `json:"nodes,omitempty"`
+	Chains   []graph.Chain                  `json:"chains,omitempty"`
+	Adapters map[string]adapter.AdapterOpts `json:"adapters,omitempty"` // hypothetically these could be a map of an array of adapterparameters for secondary queries
+	//Edges  []graph.EdgeInterface `json:"edges,omitempty"` // Non idiomatic way. Use chains instead for creation
 }
 
 type OptFunc func(*Opts)
@@ -39,10 +40,22 @@ func defaultOpts() Opts {
 		Meta: JobMetadata{
 			Enabled: true,
 		},
+		Adapters: map[string]adapter.AdapterOpts{},
 	}
 }
 
 // implement validation in the 'with*' functions
+
+func WithAdapters(adapters ...adapter.Adapter) OptFunc {
+	return func(opts *Opts) {
+		for idx := range adapters {
+			// TODO: If key already exists, provide a list of parameters instead of just a single config
+			adapter := adapters[idx]
+			opts.Adapters[adapter.Name] = adapter.AdapterOpts
+		}
+	}
+}
+
 func WithEnabled(enabled bool) OptFunc {
 	return func(opts *Opts) {
 		opts.Meta.Enabled = enabled
