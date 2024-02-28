@@ -3,7 +3,9 @@ package client
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"net/http/httputil"
 	"time"
 
 	"github.com/dghubble/sling"
@@ -21,6 +23,7 @@ type LGClient struct {
 	ServerDetails
 	Client *http.Client
 	sling  *sling.Sling
+	Debug  bool
 }
 
 type ServerDetails struct {
@@ -39,6 +42,19 @@ type TaskMetadata struct {
 	Job      string `json:"uuid"`
 	Location string `json:"location"`
 }
+
+type JobGraph struct {
+	GraphID    string          `json:"graph"`
+	JobID      string          `json:"id"`
+	Meta       job.JobMetadata `json:"meta"`
+	Size       int             `json:"size"`
+	TotalNodes int             `json:"nodes_count"`
+	TotalEdges int             `json:"edges_count"`
+	MaxID      int             `json:"maxID"`
+	CreatedAt  string          `json:"created"`
+}
+
+type JobGraphs []JobGraph
 
 type ServerError struct {
 	Code    int    `json:"code"`
@@ -66,6 +82,10 @@ func (s *LGClient) newRequest() *sling.Sling {
 			Timeout: 30 * time.Second,
 		}
 
+		if s.Debug {
+			newClient.Transport = &loggingRoundTripper{Proxied: http.DefaultTransport}
+		}
+
 		s.Client = &newClient
 	}
 
@@ -78,12 +98,38 @@ func (s *LGClient) newRequest() *sling.Sling {
 	}
 
 	return s.sling.New()
-
 }
 
 // Helpers
 
-func CreateClient(host string, port int) (*LGClient, error) {
+// loggingRoundTripper wraps around an existing http.RoundTripper, enabling logging of requests and responses.
+type loggingRoundTripper struct {
+	Proxied http.RoundTripper
+}
+
+// RoundTrip executes a single HTTP transaction and logs the request and response.
+func (lrt *loggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	requestDump, err := httputil.DumpRequestOut(req, true)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Request:", string(requestDump))
+
+	resp, err := lrt.Proxied.RoundTrip(req)
+	if err != nil {
+		return nil, err
+	}
+
+	responseDump, err := httputil.DumpResponse(resp, true)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Response:", string(responseDump))
+
+	return resp, err
+}
+
+func CreateClient(host string, port int, debug bool) (*LGClient, error) {
 
 	s := &LGClient{
 		ServerDetails: ServerDetails{
@@ -94,6 +140,7 @@ func CreateClient(host string, port int) (*LGClient, error) {
 			Timeout: 30 * time.Second,
 		},
 		sling: nil,
+		Debug: debug,
 	}
 
 	return s, nil
@@ -106,12 +153,15 @@ func (s *LGClient) sendGet(path string, params interface{}, resultStruct interfa
 	resp, err := s.newRequest().Get(path).QueryStruct(params).Receive(resultStruct, errorStruct)
 	if err != nil {
 		err = errorStruct
+		fmt.Println(err)
 	}
+
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= 300 {
 		err = fmt.Errorf("non 200 response code: %s", errorStruct.Error())
 	} else {
 		err = nil
 	}
+
 	return resp, err
 }
 
@@ -123,11 +173,13 @@ func (s *LGClient) sendPost(path string, params interface{}, body interface{}, r
 	if err != nil {
 		err = errorStruct
 	}
+
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= 300 {
 		err = fmt.Errorf("non 200 response code: %s", errorStruct.Error())
 	} else {
 		err = nil
 	}
+
 	return resp, err
 }
 
@@ -153,10 +205,6 @@ func (s *LGClient) Uptime() (float64, error) {
 	return status.Uptime, err
 }
 
-// TODO: /lg/test
-
-// TODO: /lg
-
 // This function is used to poll for new adapter tasks
 // GET /lg/adapter/{adapter}
 func (s *LGClient) PollAdapter(a adapter.Adapter) (TaskMetadata, []interface{}, error) {
@@ -178,13 +226,26 @@ func (s *LGClient) PollAdapter(a adapter.Adapter) (TaskMetadata, []interface{}, 
 // POST /graph
 func (s *LGClient) CreateJob(j job.Job) (NewJobId, error) {
 
-	// TODO: validate job
-	// - No edges should be provided in new jobs; idiomatically create them with chains
-	// - What happens if chain contains duplicate nodes?
-
 	newJob := NewJobId{}
 
 	_, err := s.sendPost("/graph", nil, j, &newJob)
 
 	return newJob, err
 }
+
+// This function is used to fetch a list of jobs
+func (s *LGClient) GetJobs() (JobGraphs, error) {
+
+	jobGraphs := JobGraphs{}
+
+	_, err := s.sendGet("/graph", nil, &jobGraphs)
+
+	return jobGraphs, err
+}
+
+// This function queries all nodes/edges in all graphs
+func (s *LGClient) QueryAllGraphs() {
+
+}
+
+// TODO: /lg

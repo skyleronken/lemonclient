@@ -15,10 +15,10 @@ var (
 	version string
 	user    permissions.User
 	tJob    job.Job
-	tMeta   job.JobMetadata
-	n1      graph.NodeInterface
-	n2      graph.NodeInterface
-	e1      graph.EdgeInterface
+	//tMeta   job.JobMetadata
+	n1 graph.NodeInterface
+	n2 graph.NodeInterface
+	e1 graph.EdgeInterface
 )
 
 // Test types
@@ -49,7 +49,7 @@ func Setup() {
 	n2, _ = graph.Node(TestType{
 		NodeMembers: graph.NodeMembers{
 			Type:  "testtype",
-			Value: "n1",
+			Value: "n2",
 		},
 		Foo: "foo2",
 	})
@@ -77,24 +77,32 @@ func Setup() {
 		},
 	}
 
-	tMeta = job.JobMetadata{
-		Priority: 100,
-		Enabled:  true,
-		Roles:    []permissions.User{user},
-	}
+	// tMeta = job.JobMetadata{
+	// 	Priority: 100,
+	// 	Enabled:  true,
+	// 	Roles:    []permissions.User{user},
+	// }
 
-	tJob = job.Job{
-		Meta: tMeta,
-		//Nodes:  []graph.NodeInterface{n1, n2},
-		//Edges:  []graph.EdgeInterface{e1},
-		Chains: []graph.Chain{c1},
-	}
+	// tJob = job.Job{
+	// 	Meta: tMeta,
+	// 	//Nodes:  []graph.NodeInterface{n1, n2},
+	// 	//Edges:  []graph.EdgeInterface{e1},
+	// 	Chains: []graph.Chain{c1},
+	// }
+
+	tJob = *job.NewJob(
+		job.WithPriority(100),
+		job.WithEnabled(true),
+		job.WithRoles(user),
+		job.WithChains(c1),
+	)
 
 	server = LGClient{
 		ServerDetails: ServerDetails{
 			Address: "127.0.0.1",
 			Port:    8000,
 		},
+		Debug: true,
 	}
 
 }
@@ -152,4 +160,12 @@ func Test_CreateJob(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, newJob.ID)
 
+}
+
+func Test_GetJobGraphs(t *testing.T) {
+	jobGraphs, err := server.GetJobs()
+	assert.NotEmpty(t, jobGraphs)
+	latest := jobGraphs[len(jobGraphs)-1]
+	assert.NoError(t, err)
+	assert.Equal(t, 2, latest.TotalNodes)
 }

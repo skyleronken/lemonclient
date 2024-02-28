@@ -15,7 +15,7 @@ import (
 type node struct {
 	NodeInterface `json:",omitempty"`
 	Properties    map[string]interface{} `json:"properties,omitempty"`
-	NodeMembers
+	NodeMembers                          //`json:"nodeMembers"`
 }
 
 // Public NodeInterface interface to allow type inference on creation of new Nodes outside of the package

@@ -20,6 +20,7 @@ var (
 	n1          graph.NodeInterface
 	n2          graph.NodeInterface
 	e1          graph.EdgeInterface
+	c1          *graph.Chain
 
 	rawMeta   *bytes.Buffer
 	assertion string
@@ -65,6 +66,8 @@ func Setup() {
 		Bar: "baz",
 	})
 
+	c1, _ = graph.EdgeToChain(e1)
+
 	falsishUser = permissions.User{
 		Name: "fUser",
 		Permissions: permissions.Permissions{
@@ -81,17 +84,24 @@ func Setup() {
 		},
 	}
 
-	tMeta = JobMetadata{
-		Priority: 100,
-		Enabled:  true,
-		Roles:    []permissions.User{truishUser, falsishUser},
-	}
+	// tMeta = JobMetadata{
+	// 	Priority: 100,
+	// 	Enabled:  true,
+	// 	Roles:    []permissions.User{truishUser, falsishUser},
+	// }
 
-	tJob = Job{
-		Meta:  tMeta,
-		Nodes: []graph.NodeInterface{n1, n2},
-		Edges: []graph.EdgeInterface{e1},
-	}
+	// tJob = Job{
+	// 	Meta:  tMeta,
+	// 	Nodes: []graph.NodeInterface{n1, n2},
+	// 	Edges: []graph.EdgeInterface{e1},
+	// }
+
+	tJob = *NewJob(
+		WithChains(*c1),
+		WithPriority(100),
+		WithEnabled(true),
+		WithRoles(truishUser, falsishUser),
+	)
 
 	rawMeta = new(bytes.Buffer)
 
@@ -122,7 +132,7 @@ func Test_Job_Serialize(t *testing.T) {
 
 func Test_JobMetadata_Serialize(t *testing.T) {
 
-	rawMeta, err := json.Marshal(tMeta)
+	rawMeta, err := json.Marshal(tJob.Meta)
 	assert.NoError(t, err)
 
 	if strings.TrimRight(string(rawMeta), "\r\n") != assertion {
