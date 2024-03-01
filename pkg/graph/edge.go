@@ -16,8 +16,8 @@ var nodeInterfaceType = reflect.TypeOf((*NodeInterface)(nil)).Elem()
 // Private edge struct to represent LG edges
 type edge struct {
 	EdgeInterface `json:",omitempty"`
-	Properties    map[string]interface{} `json:",omitempty"`
-	EdgeMembers
+	Properties    map[string]interface{} `json:",omitempty" mapstructure:"properties"`
+	EdgeMembers   `mapstructure:",squash"`
 }
 
 // Public EdgeInterface interface to allow type inference on creation of new Edges outside of the package
@@ -32,10 +32,13 @@ type EdgeInterface interface {
 
 // Minimal edge contents is src, tgt, id, type. Properties are flattened when turned into JSON when using EdgeToJSON()
 type EdgeMembers struct {
-	Source NodeInterface `json:"src,omitempty"`
-	Target NodeInterface `json:"tgt,omitempty"`
-	ID     string        `json:"ID,omitempty"`
-	Type   string        `json:"type"`
+	Source       NodeInterface `json:"src,omitempty" mapstructure:"src"`
+	Target       NodeInterface `json:"tgt,omitempty" mapstructure:"tgt"`
+	ID           string        `json:"ID,omitempty"`
+	SourceId     string        `json:"srcID,omitempty" mapstructure:"srcID"`
+	TargetId     string        `json:"tgtID,omitempty" mapstructure:"tgtID"`
+	Type         string        `json:"type" mapstructure:"type"`
+	LastModified string        `json:"last_modified,omitempty" mapstructure:"last_modified"`
 }
 
 func (e edge) GetSource() NodeInterface              { return e.Source }

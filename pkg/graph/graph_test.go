@@ -44,7 +44,7 @@ func setup() {
 
 	tt2 := GoodTestType{
 		NodeMembers: NodeMembers{
-			ID:    "testid",
+			ID:    1,
 			Type:  "TestType",
 			Value: "TestTypeValue2",
 		},
@@ -166,7 +166,7 @@ func Test_NodeToJson(t *testing.T) {
 
 	assert.Equal(n2.GetType(), tMap["type"])
 	assert.Equal(n2.GetValue(), tMap["value"])
-	assert.Equal(n2.GetID(), tMap["ID"])
+	assert.EqualValues(n2.GetID(), tMap["ID"])
 	assert.NotContains(tMap, "Foo")
 }
 

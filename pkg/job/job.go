@@ -146,7 +146,7 @@ func (j Job) MarshalJSON() ([]byte, error) {
 
 	for c := range j.Chains {
 		curChain := j.Chains[c]
-		chainJson, err := graph.ChainToJson(curChain)
+		chainJson, err := graph.ChainToJson(curChain, true)
 		scArray := []map[string]interface{}{}
 		for chainPart := range chainJson {
 			scMap, _ := utils.JSONBytesToMap(chainJson[chainPart])

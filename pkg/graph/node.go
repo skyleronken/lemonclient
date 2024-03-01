@@ -14,27 +14,28 @@ import (
 // Private node struct to represent an LG node
 type node struct {
 	NodeInterface `json:",omitempty"`
-	Properties    map[string]interface{} `json:"properties,omitempty"`
-	NodeMembers                          //`json:"nodeMembers"`
+	Properties    map[string]interface{} `json:"properties,omitempty" mapstructure:"properties,omitempty`
+	NodeMembers
 }
 
 // Public NodeInterface interface to allow type inference on creation of new Nodes outside of the package
 type NodeInterface interface {
 	GetType() string
 	GetValue() string
-	GetID() string
+	GetID() int
 	GetProperties() map[string]interface{}
 	validate()
 }
 
 // Minimal node contents is ID (can be null implying new node). Type and Value are used as primary keys. Properties are flattened when JSONified using the NodeToJSON function.
 type NodeMembers struct {
-	ID    string `json:"ID,omitempty"`
-	Type  string `json:"type"`
-	Value string `json:"value"`
+	ID           int    `json:"ID,omitempty"`
+	Type         string `json:"type" mapstructure:"type"`
+	Value        string `json:"value" mapstructure:"value"`
+	LastModified string `json:"last_modified,omitempty" mapstructure:"last_modified"`
 }
 
-func (n node) GetID() string                         { return n.ID }
+func (n node) GetID() int                            { return n.ID }
 func (n node) GetValue() string                      { return n.Value }
 func (n node) GetType() string                       { return n.Type }
 func (n node) GetProperties() map[string]interface{} { return n.Properties }
@@ -59,7 +60,7 @@ func Node(obj interface{}) (NodeInterface, error) {
 
 		if name == "ID" {
 			hasID = true
-			n.ID = value.String()
+			n.ID = int(value.Int())
 		} else if name == "Type" {
 			hasType = true
 			n.Type = value.String()
@@ -96,7 +97,7 @@ func NodeToJson(n NodeInterface, minimal bool) ([]byte, error) {
 	nMap := map[string]interface{}{}
 
 	// If no ID, then this is a new node and properties MUST be included for creation purposes.
-	if !minimal || len(n.GetID()) == 0 {
+	if !minimal || n.GetID() == 0 {
 		nJson, _ := json.Marshal(n.GetProperties())
 		nMap, err = utils.JSONBytesToMap(nJson)
 		if err != nil {

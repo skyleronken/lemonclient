@@ -5,14 +5,14 @@ type Adapter struct {
 	AdapterOpts
 }
 
-type AdaperBehaviors struct {
+type AdapterBehaviors struct {
 	Query   string `json:"query,omitempty"`
 	Limit   uint64 `json:"limit,omitempty"`
 	Timeout int    `json:"timeout,omitempty"`
 }
 
 type AdapterOpts struct {
-	AdaperBehaviors
+	AdapterBehaviors
 	Filter   string `json:"filter,omitempty"`
 	Enabled  bool   `json:"enabled,omitempty"`
 	Autotask bool   `json:"autotask,omitempty"`
@@ -20,7 +20,7 @@ type AdapterOpts struct {
 }
 
 type AdapterPollingOpts struct {
-	AdaperBehaviors
+	AdapterBehaviors
 	IgnoreTaskUuids []string `json:"ignore,omitempty"`
 	JobUuids        []string `json:"uuid,omitempty"`
 	//Meta            []string `json:"meta,omitempty"` // being removed from LG

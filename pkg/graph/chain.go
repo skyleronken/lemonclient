@@ -44,7 +44,7 @@ func CreateChain(elements ...interface{}) (chain, error) {
 // 	Destination NodeInterface
 // }
 
-func ChainToJson(c ChainInterface) ([][]byte, error) {
+func ChainToJson(c ChainInterface, minimal bool) ([][]byte, error) {
 
 	// src, _ := NodeToJson(c.Source, true)
 	// dst, _ := NodeToJson(c.Destination, true)
@@ -60,10 +60,10 @@ func ChainToJson(c ChainInterface) ([][]byte, error) {
 		var err error
 		if idx%2 == 0 { // nodes at even indices
 			n, _ := e.(NodeInterface)
-			json, err = NodeToJson(n, true)
+			json, err = NodeToJson(n, minimal)
 		} else { // edges at dd indices
 			d, _ := e.(EdgeInterface)
-			json, err = EdgeToJson(d, true, false)
+			json, err = EdgeToJson(d, minimal, false)
 		}
 		if err != nil {
 			return nil, err

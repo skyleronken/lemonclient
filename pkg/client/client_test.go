@@ -3,11 +3,14 @@ package client
 import (
 	"os"
 	"testing"
+	"time"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/skyleronken/lemonclient/pkg/adapter"
 	"github.com/skyleronken/lemonclient/pkg/graph"
 	"github.com/skyleronken/lemonclient/pkg/job"
 	"github.com/skyleronken/lemonclient/pkg/permissions"
+	"github.com/skyleronken/lemonclient/pkg/task"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,22 +20,27 @@ var (
 	user    permissions.User
 	tJob    job.Job
 	//tMeta   job.JobMetadata
-	n1 graph.NodeInterface
-	n2 graph.NodeInterface
-	e1 graph.EdgeInterface
-	a1 *adapter.Adapter
-	a2 *adapter.Adapter
+	n1  graph.NodeInterface
+	n2  graph.NodeInterface
+	n3  graph.NodeInterface
+	e1  graph.EdgeInterface
+	tn1 TestType
+	tn2 TestType
+	tn3 TestType
+	te1 TestEdge
+	a1  *adapter.Adapter
+	a2  *adapter.Adapter
 )
 
 // Test types
 type TestType struct {
-	graph.NodeMembers
-	Foo string
+	graph.NodeMembers `mapstructure:",squash"`
+	Foo               string `json:"Foo"`
 }
 
 type TestEdge struct {
-	graph.EdgeMembers
-	Bar string
+	graph.EdgeMembers `mapstructure:",squash"`
+	Bar               string `json:"Bar"`
 }
 
 // end test types
@@ -41,30 +49,42 @@ func Setup() {
 
 	version = "3.4.2"
 
-	n1, _ = graph.Node(TestType{
+	tn1 = TestType{
 		NodeMembers: graph.NodeMembers{
 			Type:  "testtype",
 			Value: "n1",
 		},
 		Foo: "foo1",
-	})
+	}
+	n1, _ = graph.Node(tn1)
 
-	n2, _ = graph.Node(TestType{
+	tn2 = TestType{
 		NodeMembers: graph.NodeMembers{
 			Type:  "testtype",
 			Value: "n2",
 		},
 		Foo: "foo2",
-	})
+	}
+	n2, _ = graph.Node(tn2)
 
-	e1, _ = graph.Edge(TestEdge{
+	tn3 = TestType{
+		NodeMembers: graph.NodeMembers{
+			Type:  "testtype",
+			Value: "n3",
+		},
+		Foo: "foo3",
+	}
+	n3, _ = graph.Node(tn3)
+
+	te1 = TestEdge{
 		EdgeMembers: graph.EdgeMembers{
 			Type:   "testedge",
 			Source: n1,
 			Target: n2,
 		},
 		Bar: "baz",
-	})
+	}
+	e1, _ = graph.Edge(te1)
 
 	// c1 := graph.Chain{
 	// 	Source:      n1,
@@ -108,7 +128,7 @@ func Setup() {
 		job.WithEnabled(true),
 		job.WithRoles(user),
 		job.WithChains(c1),
-		job.WithAdapters(*a1),
+		job.WithAdapters(*a1, *a2),
 	)
 
 	server = LGClient{
@@ -190,13 +210,61 @@ func Test_GetJobGraphs(t *testing.T) {
 }
 
 func Test_PollAdapter(t *testing.T) {
-	metadata, _, err := server.PollAdapter(*a1, adapter.AdapterPollingOpts{})
+
+	apo := adapter.AdapterPollingOpts{}
+	apo.Timeout = 1
+
+	metadata, _, err := server.PollAdapter(*a1, apo)
 	assert.NoError(t, err)
 	assert.Equal(t, a1.Name, metadata.Adapter)
 	assert.Equal(t, 2, metadata.Length)
 
 	// TODO: evaluate the nodes that return
-	// TODO: evaluate if the adapter query is for a chain. How does that look?
+	metadata, chains, err := server.PollAdapter(*a2, apo)
+	assert.NoError(t, err)
+	assert.Equal(t, a2.Name, metadata.Adapter)
+	assert.Equal(t, 1, metadata.Length)
+	assert.Len(t, chains, 1)    // [n,e,n]
+	assert.Len(t, chains[0], 3) // n,e,n
+
+	chain := chains[0]
+	cn1 := chain[0]
+	cedge := chain[1]
+	cn2 := chain[2]
+
+	assert.Equal(t, tn1.Foo, cn1["Foo"])
+	assert.Equal(t, te1.Bar, cedge["Bar"])
+	assert.Equal(t, tn2.Foo, cn2["Foo"])
+
+	time.Sleep(2 * time.Second)
+
+	// check t make sure timeout works to instantly retry
+	metadata, data, err := server.PollAdapter(*a1, apo)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(data))
+
+	var nn TestType
+	err = mapstructure.Decode(cn1, &nn)
+	assert.NoError(t, err)
+
+	nn.Foo = "newFoo"
+
+	n4, err := graph.Node(nn)
+	assert.NoError(t, err)
+
+	// mark it done
+	tr := task.PrepareTaskResults(
+		//task.WithStateSetTo(task.TaskState_Delete),
+		task.WithNodes(n4),
+	)
+
+	err = server.PostTaskResults(metadata.Job, metadata.Task, *tr)
+	assert.NoError(t, err)
+
+	metadata, _, err = server.PollAdapter(*a1, adapter.AdapterPollingOpts{})
+	assert.NoError(t, err)
+	assert.Empty(t, metadata)
+
 	// TODO: ignore list respeceted
 	// TODO: job uuids respected
 

@@ -12,6 +12,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/skyleronken/lemonclient/pkg/adapter"
 	"github.com/skyleronken/lemonclient/pkg/job"
+	"github.com/skyleronken/lemonclient/pkg/task"
 )
 
 var (
@@ -42,13 +43,13 @@ type TaskMetadata struct {
 	Adapter   string  `json:"adapter"`
 	Query     string  `json:"query"`
 	State     string  `json:"state"`
-	Retries   int     `json:"retrties"`
+	Retries   int     `json:"retries"`
 	Timestamp float64 `json:"timestamp"`
 	Timeout   int     `json:"timeout"`
 	Details   string  `json:"details"`
 	Length    int     `json:"length"`
 	Location  string  `json:"location"`
-	Job       string  `json:"uuid"`
+	Job       string  `json:"uuid" mapstructure:"uuid"`
 }
 
 type JobGraph struct {
@@ -63,6 +64,9 @@ type JobGraph struct {
 }
 
 type JobGraphs []JobGraph
+
+type TaskChainElement map[string]interface{}
+type TaskChain []TaskChainElement
 
 type ServerError struct {
 	Code    int    `json:"code"`
@@ -215,14 +219,14 @@ func (s *LGClient) Uptime() (float64, error) {
 
 // This function is used to poll for new adapter tasks
 // POST /lg/adapter/{adapter}
-func (s *LGClient) PollAdapter(a adapter.Adapter, p adapter.AdapterPollingOpts) (TaskMetadata, []interface{}, error) {
+func (s *LGClient) PollAdapter(a adapter.Adapter, p adapter.AdapterPollingOpts) (TaskMetadata, []TaskChain, error) {
 
 	adapterUrl := fmt.Sprintf("/lg/adapter/%s", a.Name)
 	var metadata TaskMetadata
 
 	var responses []interface{}
 	_, err := s.sendPost(adapterUrl, nil, p, &responses)
-	if err != nil {
+	if err != nil || len(responses) == 0 {
 		return metadata, nil, err
 	}
 
@@ -263,15 +267,34 @@ func (s *LGClient) PollAdapter(a adapter.Adapter, p adapter.AdapterPollingOpts) 
 		]
 	*/
 
+	// Extract the metadata
 	err = mapstructure.Decode(responses[0], &metadata)
 
 	if err != nil {
 		return metadata, nil, fmt.Errorf("failed to parse task metadata")
 	}
 
-	// TODO: Parse remaining responses into nodes/edges/chains/etc
+	// Extract the rest
+	var taskChains []TaskChain
 
-	return metadata, responses[1:], err
+	err = mapstructure.Decode(responses[1:], &taskChains)
+
+	if err != nil {
+		return metadata, taskChains, err
+	}
+
+	return metadata, taskChains, err
+}
+
+// NOTE: This deviates from using methods because generics cannot be passed to methods
+// This function is used by adapters to post results back to a graph
+// POST /lg/task/{job_uuid}/{task_uuid}
+func (s *LGClient) PostTaskResults(jobId, taskId string, tResults task.TaskResults) error {
+
+	resultsUrl := fmt.Sprintf("/lg/task/%s/%s", jobId, taskId)
+	_, err := s.sendPost(resultsUrl, nil, tResults, nil)
+
+	return err
 }
 
 // This function is used to create new job
@@ -339,4 +362,16 @@ func (s *LGClient) GetJobs() (JobGraphs, error) {
 
 // TODO: GET /lg/config/{job_uuid}/{adapter} ; get configs for a specific jobs specific adapter
 
-// TODOO: POST /lg/config/{job_uuid}/{adapter} ; update the cnfigs for a specifi jobs specific adapter
+// TODO: POST /lg/config/{job_uuid}/{adapter} ; update the cnfigs for a specifi jobs specific adapter
+
+// TODO: POST /lg/adapter/{adapter}/{job_uuid} ; manually exercise adapter against a job
+
+// TODO: POST /lg/task/{job_uuid} ; look at tasks for a given job
+
+// TODO: GET /lg/task/{job_uuid}/{task_uuid} ; update a timestamp for a given task, return the task
+
+// TODO: HEAD /lg/task/{job_uuid}/{task_uuid} ; update a timestamp for a given task without returning it
+
+// TODO: DELETE /lg/task/{job_uuid}/{task_uuid} ; delete a given task
+
+// TODO: POST /lg/delta/{job_uuid} ; fetch lists of new/updated/deleted nodes and edges
