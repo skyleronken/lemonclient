@@ -286,7 +286,6 @@ func (s *LGClient) PollAdapter(a adapter.Adapter, p adapter.AdapterPollingOpts) 
 	return metadata, taskChains, err
 }
 
-// NOTE: This deviates from using methods because generics cannot be passed to methods
 // This function is used by adapters to post results back to a graph
 // POST /lg/task/{job_uuid}/{task_uuid}
 func (s *LGClient) PostTaskResults(jobId, taskId string, tResults task.TaskResults) error {

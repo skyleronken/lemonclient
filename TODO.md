@@ -1,7 +1,3 @@
-- Figure out why properties are missing when marshalling nodes for taskresults
-
-- Build test adapter
-- Compile adapter shared objects
 - Command line utility
 - API to load an adapter SO
 - API to start jobs

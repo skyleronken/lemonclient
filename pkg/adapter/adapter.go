@@ -21,8 +21,8 @@ type AdapterOpts struct {
 
 type AdapterPollingOpts struct {
 	AdapterBehaviors
-	IgnoreTaskUuids []string `json:"ignore,omitempty"`
-	JobUuids        []string `json:"uuid,omitempty"`
+	IgnoreTaskUuids []string `json:"ignore"`
+	JobUuids        []string `json:"uuid"`
 	//Meta            []string `json:"meta,omitempty"` // being removed from LG
 }
 
