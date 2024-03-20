@@ -1,5 +1,3 @@
-- Command line utility
-- API to load an adapter SO
 - API to start jobs
 - Build DNS API adapter
 - Build Shodan API adapter

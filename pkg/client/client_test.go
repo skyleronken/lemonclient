@@ -214,13 +214,13 @@ func Test_PollAdapter(t *testing.T) {
 	apo := adapter.AdapterPollingOpts{}
 	apo.Timeout = 1
 
-	metadata, _, err := server.PollAdapter(*a1, apo)
+	_, metadata, _, err := server.PollAdapter(*a1, apo)
 	assert.NoError(t, err)
 	assert.Equal(t, a1.Name, metadata.Adapter)
 	assert.Equal(t, 2, metadata.Length)
 
 	// TODO: evaluate the nodes that return
-	metadata, chains, err := server.PollAdapter(*a2, apo)
+	_, metadata, chains, err := server.PollAdapter(*a2, apo)
 	assert.NoError(t, err)
 	assert.Equal(t, a2.Name, metadata.Adapter)
 	assert.Equal(t, 1, metadata.Length)
@@ -239,7 +239,7 @@ func Test_PollAdapter(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// check t make sure timeout works to instantly retry
-	metadata, data, err := server.PollAdapter(*a1, apo)
+	_, metadata, data, err := server.PollAdapter(*a1, apo)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(data))
 
@@ -261,7 +261,7 @@ func Test_PollAdapter(t *testing.T) {
 	err = server.PostTaskResults(metadata.Job, metadata.Task, *tr)
 	assert.NoError(t, err)
 
-	metadata, _, err = server.PollAdapter(*a1, adapter.AdapterPollingOpts{})
+	_, metadata, _, err = server.PollAdapter(*a1, adapter.AdapterPollingOpts{})
 	assert.NoError(t, err)
 	assert.Empty(t, metadata)
 

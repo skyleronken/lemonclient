@@ -219,15 +219,15 @@ func (s *LGClient) Uptime() (float64, error) {
 
 // This function is used to poll for new adapter tasks
 // POST /lg/adapter/{adapter}
-func (s *LGClient) PollAdapter(a adapter.Adapter, p adapter.AdapterPollingOpts) (TaskMetadata, []TaskChain, error) {
+func (s *LGClient) PollAdapter(a adapter.Adapter, p adapter.AdapterPollingOpts) (*http.Response, TaskMetadata, []TaskChain, error) {
 
 	adapterUrl := fmt.Sprintf("/lg/adapter/%s", a.Name)
 	var metadata TaskMetadata
 
 	var responses []interface{}
-	_, err := s.sendPost(adapterUrl, nil, p, &responses)
+	resp, err := s.sendPost(adapterUrl, nil, p, &responses)
 	if err != nil || len(responses) == 0 {
-		return metadata, nil, err
+		return resp, metadata, nil, err
 	}
 
 	/*
@@ -271,7 +271,7 @@ func (s *LGClient) PollAdapter(a adapter.Adapter, p adapter.AdapterPollingOpts) 
 	err = mapstructure.Decode(responses[0], &metadata)
 
 	if err != nil {
-		return metadata, nil, fmt.Errorf("failed to parse task metadata")
+		return resp, metadata, nil, fmt.Errorf("failed to parse task metadata")
 	}
 
 	// Extract the rest
@@ -280,10 +280,10 @@ func (s *LGClient) PollAdapter(a adapter.Adapter, p adapter.AdapterPollingOpts) 
 	err = mapstructure.Decode(responses[1:], &taskChains)
 
 	if err != nil {
-		return metadata, taskChains, err
+		return resp, metadata, taskChains, err
 	}
 
-	return metadata, taskChains, err
+	return resp, metadata, taskChains, err
 }
 
 // This function is used by adapters to post results back to a graph
