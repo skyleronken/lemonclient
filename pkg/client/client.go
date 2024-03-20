@@ -186,10 +186,10 @@ func (s *LGClient) sendPost(path string, params interface{}, body interface{}, r
 		err = errorStruct
 	}
 
-	if resp.StatusCode < http.StatusOK || resp.StatusCode >= 300 {
-		err = fmt.Errorf("non 200 response code: %s", errorStruct.Error())
-	} else {
-		err = nil
+	if resp != nil {
+		if resp.StatusCode < http.StatusOK || resp.StatusCode >= 300 {
+			err = fmt.Errorf("non 200 response code: %s", errorStruct.Error())
+		}
 	}
 
 	return resp, err
