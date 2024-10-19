@@ -59,7 +59,7 @@ func Edge(obj interface{}) (EdgeInterface, error) {
 		Properties: make(map[string]interface{}),
 	}
 
-	hasID, hasType, hasSource, hasTarget := false, false, false, false
+	hasType, hasSource, hasTarget := false, false, false
 
 	for i := 0; i < sValue.NumField(); i++ {
 		field := sType.Field(i)
@@ -67,7 +67,6 @@ func Edge(obj interface{}) (EdgeInterface, error) {
 		name := field.Name
 
 		if name == "ID" {
-			hasID = true
 			e.ID = value.String()
 		} else if name == "Type" {
 			hasType = true
@@ -87,7 +86,6 @@ func Edge(obj interface{}) (EdgeInterface, error) {
 				return nil, fmt.Errorf("`Target` must be a valid Node")
 			}
 		} else if name == "EdgeMembers" {
-			hasID = true
 			hasType = true
 			hasSource = true
 			hasTarget = true
@@ -97,8 +95,8 @@ func Edge(obj interface{}) (EdgeInterface, error) {
 		}
 	}
 
-	if !hasID || !hasType || !hasSource || !hasTarget {
-		return nil, fmt.Errorf("structs representing edges must contain a `Type`, `ID`, `Source`, and `Target` member")
+	if !hasType || !hasSource || !hasTarget {
+		return nil, fmt.Errorf("structs representing edges must contain a `Type`, `Source`, and `Target` member")
 	}
 
 	if len(e.Type) == 0 {

@@ -51,7 +51,7 @@ func Node(obj interface{}) (NodeInterface, error) {
 		Properties: make(map[string]interface{}),
 	}
 
-	hasID, hasType, hasValue := false, false, false
+	hasType, hasValue := false, false
 
 	for i := 0; i < sValue.NumField(); i++ {
 		field := sType.Field(i)
@@ -59,7 +59,6 @@ func Node(obj interface{}) (NodeInterface, error) {
 		name := field.Name
 
 		if name == "ID" {
-			hasID = true
 			n.ID = int(value.Int())
 		} else if name == "Type" {
 			hasType = true
@@ -69,7 +68,6 @@ func Node(obj interface{}) (NodeInterface, error) {
 			n.Value = value.String()
 		} else if name == "NodeMembers" {
 			hasValue = true
-			hasID = true
 			hasType = true
 			n.NodeMembers = value.Interface().(NodeMembers)
 		} else {
@@ -77,7 +75,7 @@ func Node(obj interface{}) (NodeInterface, error) {
 		}
 	}
 
-	if !hasID || !hasValue || !hasType {
+	if !hasValue || !hasType {
 		return nil, fmt.Errorf("structs representing nodes must contain a `Type`, `ID`, and `Value` member")
 	}
 
