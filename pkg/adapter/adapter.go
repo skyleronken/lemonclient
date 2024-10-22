@@ -1,5 +1,7 @@
 package adapter
 
+import "strings"
+
 type Adapter struct {
 	Name string
 	AdapterOpts
@@ -85,7 +87,7 @@ func ConfigureAdapter(name string, opts ...AdapterOptFunc) *Adapter {
 	}
 
 	return &Adapter{
-		Name:        name,
+		Name:        strings.ToUpper(name),
 		AdapterOpts: o,
 	}
 }
