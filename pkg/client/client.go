@@ -157,8 +157,6 @@ func CreateClient(host string, port int, debug bool) (*LGClient, error) {
 
 	if debug {
 		fmt.Println("lemonclient debugging enabled")
-	} else {
-		fmt.Println("lemonclient debugging disabled")
 	}
 
 	return s, nil
