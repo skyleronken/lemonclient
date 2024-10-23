@@ -65,9 +65,17 @@ type JobGraph struct {
 }
 
 type D3View struct {
-	Pos   int                   `json:"pos"`
-	Nodes []graph.NodeInterface `json:"nodes"`
-	Edges []graph.EdgeInterface `json:"edges"`
+	Pos   int      `json:"pos"`
+	Nodes []D3Node `json:"nodes"`
+	Edges []D3Edge `json:"edges"`
+}
+
+type D3Node struct {
+	Data graph.NodeInterface `json:"data"`
+}
+
+type D3Edge struct {
+	Data graph.EdgeInterface `json:"data"`
 }
 
 type JobGraphs []JobGraph
