@@ -161,7 +161,8 @@ func CreateClient(host string, port int, debug bool) (*LGClient, error) {
 	}
 
 	if debug {
-		fmt.Println("lemonclient debugging enabled")
+		fmt.Println("lemonclient creating debugging client")
+		s.Client.Transport = &loggingRoundTripper{Proxied: http.DefaultTransport}
 	}
 
 	return s, nil
