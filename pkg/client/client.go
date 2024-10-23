@@ -11,6 +11,7 @@ import (
 	"github.com/dghubble/sling"
 	"github.com/mitchellh/mapstructure"
 	"github.com/skyleronken/lemonclient/pkg/adapter"
+	"github.com/skyleronken/lemonclient/pkg/graph"
 	"github.com/skyleronken/lemonclient/pkg/job"
 	"github.com/skyleronken/lemonclient/pkg/task"
 )
@@ -61,6 +62,12 @@ type JobGraph struct {
 	TotalEdges int             `json:"edges_count"`
 	MaxID      int             `json:"maxID"`
 	CreatedAt  string          `json:"created"`
+}
+
+type D3View struct {
+	Pos   int                   `json:"pos"`
+	Nodes []graph.NodeInterface `json:"nodes"`
+	Edges []graph.EdgeInterface `json:"edges"`
 }
 
 type JobGraphs []JobGraph
@@ -212,6 +219,47 @@ func (s *LGClient) sendPost(path string, params interface{}, body interface{}, r
 	return resp, err
 }
 
+func (s *LGClient) sendPut(path string, params interface{}, body interface{}, resultStruct interface{}) (*http.Response, error) {
+
+	if s.Debug {
+		fmt.Printf("PUT %s\n", path)
+	}
+	errorStruct := new(ServerError)
+	resp, err := s.newRequest().Put(path).QueryStruct(params).BodyJSON(body).Receive(resultStruct, errorStruct)
+	if err != nil {
+		err = errorStruct
+	}
+
+	if resp != nil {
+		if resp.StatusCode < http.StatusOK || resp.StatusCode >= 300 {
+			err = fmt.Errorf("non 200 response code: %s", errorStruct.Error())
+		}
+	}
+
+	return resp, err
+}
+
+func (s *LGClient) sendDelete(path string, params interface{}, body interface{}, resultStruct interface{}) (*http.Response, error) {
+
+	if s.Debug {
+		fmt.Printf("DELETE %s\n", path)
+	}
+	errorStruct := new(ServerError)
+	resp, err := s.newRequest().Delete(path).QueryStruct(params).BodyJSON(body).Receive(resultStruct, errorStruct)
+	if err != nil {
+		err = errorStruct
+	}
+
+	if resp != nil {
+		if resp.StatusCode < http.StatusOK || resp.StatusCode >= 300 {
+			err = fmt.Errorf("non 200 response code: %s", errorStruct.Error())
+		}
+	}
+
+	return resp, err
+
+}
+
 // Public Methods
 
 // This function retrieves the status of the server
@@ -325,6 +373,7 @@ func (s *LGClient) CreateJob(j job.Job) (NewJobId, error) {
 }
 
 // This function is used to fetch a list of jobs
+// GET /graph
 func (s *LGClient) GetJobs() (JobGraphs, error) {
 
 	jobGraphs := JobGraphs{}
@@ -334,21 +383,64 @@ func (s *LGClient) GetJobs() (JobGraphs, error) {
 	return jobGraphs, err
 }
 
+// GET /graph/{uuid}/status ; get graph metadata, size, node/edge count, create date
+func (s *LGClient) GetJobStatus(uuid string) (JobGraph, error) {
+
+	jobGraph := JobGraph{}
+
+	_, err := s.sendGet(fmt.Sprintf("/graph/%s/status", uuid), nil, &jobGraph)
+
+	return jobGraph, err
+
+}
+
+// DELETE /graph/{uuid} ; delete a graph
+func (s *LGClient) DeleteJob(uuid string) error {
+
+	_, err := s.sendDelete(fmt.Sprintf("/graph/%s", uuid), nil, nil, nil)
+
+	return err
+}
+
+// PUT /graph/{uuid}/meta ; merge in graph metadata
+func (s *LGClient) UpdateJobMetadata(uuid string, meta job.JobMetadata) error {
+
+	_, err := s.sendPut(fmt.Sprintf("/graph/%s/meta", uuid), nil, meta, nil)
+
+	return err
+}
+
+// GET /graph/{uuid}/meta ; get a graphs metadata
+func (s *LGClient) GetJobMetadata(uuid string) (job.JobMetadata, error) {
+
+	meta := job.JobMetadata{}
+
+	_, err := s.sendGet(fmt.Sprintf("/graph/%s/meta", uuid), nil, &meta)
+
+	return meta, err
+}
+
+// GET /d3/{uuid} ; stream d3 json of a graph
+func (s *LGClient) GetJobD3View(uuid string) (D3View, error) {
+
+	d3View := D3View{}
+
+	_, err := s.sendGet(fmt.Sprintf("/d3/%s", uuid), nil, &d3View)
+
+	return d3View, err
+}
+
+/// TODOS
+
 // TODO: GET /graph/{uuid} ; get entire detail of a graph (including all edges and nodes)
 
 // TODO: POST /graph/{uuid} ; merge data into an existing graph
 
 // TODO: PUT /graph/{uuid} ; upload a graph in binary format
 
-// TODO: DELETE /graph/{uuid} ; delete a graph
-
-// TODO: GET /graph/{uuid}/meta ; get a graphs metadata
-
 // TODO: PUT /graph/{uuid}/meta ; merge in graph metadata
 
 // TODO: GET /graph/{uuid}/seeds ; list of payloads which were marked as seeds in metadata when posted
-
-// TODO: GET /graph/{uuid}/status ; get graph metadata, size, node/edge count, create date
 
 // TODO: GET /graph/{uuid}/node/{ID} ; get info about specifi node in a graph
 
@@ -363,10 +455,6 @@ func (s *LGClient) GetJobs() (JobGraphs, error) {
 // TODO: POST /graph/exec ; execute a python function against all graphs
 
 // TODO: POST /graph/{uuid}/exec ; execute a python function against a specific graph
-
-// TODO: GET /view/{uuid} ; get d3 version of graph
-
-// TODO: GET /d3/{uuid} ; stream d3 json of a graph
 
 // TODO: GET /graph?q= ; query all graphs for specific entities
 
