@@ -95,10 +95,15 @@ func (s *LGClient) newRequest() *sling.Sling {
 		}
 
 		if s.Debug {
+			fmt.Println("lemonclient creating debugging client")
 			newClient.Transport = &loggingRoundTripper{Proxied: http.DefaultTransport}
 		}
 
 		s.Client = &newClient
+	}
+
+	if s.Debug {
+		fmt.Println("lemonclient creating new request")
 	}
 
 	// Create a sling if none yet exists
@@ -165,6 +170,10 @@ func CreateClient(host string, port int, debug bool) (*LGClient, error) {
 // Private helper to set GETs
 func (s *LGClient) sendGet(path string, params interface{}, resultStruct interface{}) (*http.Response, error) {
 
+	if s.Debug {
+		fmt.Printf("GET %s\n", path)
+	}
+
 	errorStruct := new(ServerError)
 	resp, err := s.newRequest().Get(path).QueryStruct(params).Receive(resultStruct, errorStruct)
 	if err != nil {
@@ -184,6 +193,9 @@ func (s *LGClient) sendGet(path string, params interface{}, resultStruct interfa
 // Private helper to send POSTs
 func (s *LGClient) sendPost(path string, params interface{}, body interface{}, resultStruct interface{}) (*http.Response, error) {
 
+	if s.Debug {
+		fmt.Printf("POST %s\n", path)
+	}
 	errorStruct := new(ServerError)
 	resp, err := s.newRequest().Post(path).QueryStruct(params).BodyJSON(body).Receive(resultStruct, errorStruct)
 	if err != nil {
