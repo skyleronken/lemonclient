@@ -442,7 +442,6 @@ func (s *LGClient) GetJobD3View(uuid string) (D3View, error) {
 	d3View := D3View{}
 
 	_, err := s.sendGet(fmt.Sprintf("/d3/%s", uuid), nil, &d3View)
-	fmt.Printf("D3: %v+\n", d3View)
 
 	return d3View, err
 }
