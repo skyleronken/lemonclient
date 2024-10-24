@@ -99,6 +99,10 @@ func (c *LGClient) StreamDelta(graphUUID string, params *DeltaParams, callback U
 	req.URL.RawQuery = q.Encode()
 
 	client := &http.Client{}
+	if c.Debug {
+		fmt.Println("lemonclient creating debugging streaming client")
+		client.Transport = &loggingRoundTripper{Proxied: http.DefaultTransport}
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to execute request: %w", err)
@@ -123,6 +127,10 @@ func (c *LGClient) StreamDelta(graphUUID string, params *DeltaParams, callback U
 		if err := json.Unmarshal([]byte(line), &rawMessage); err != nil {
 			callback(nil, 0, nil, fmt.Errorf("failed to parse line: %w", err))
 			continue
+		}
+
+		if c.Debug {
+			fmt.Println("lemonclient rawMessage: ", string(rawMessage))
 		}
 
 		// Check if this is an array or object
