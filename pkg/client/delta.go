@@ -1,15 +1,14 @@
 package client
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/skyleronken/lemonclient/pkg/graph"
 	"github.com/skyleronken/lemonclient/pkg/job"
+	"github.com/skyleronken/lemonclient/pkg/utils"
 )
 
 // Header represents the initial response header from the delta API
@@ -59,6 +58,23 @@ type UpdateCallback func(header *DeltaHeader, flags int64, data interface{}, err
 
 // 	return params
 // }
+
+// nodeRegistry maps node types to their concrete implementations
+var nodeRegistry = map[string]func() graph.NodeInterface{
+	//"domain": func() graph.NodeInterface { return &DomainNode{} },
+}
+
+var edgeRegistry = map[string]func() graph.EdgeInterface{}
+
+// RegisterNodeType registers a new node type with its factory function
+func RegisterNodeType(nodeType string, factory func() graph.NodeInterface) {
+	nodeRegistry[nodeType] = factory
+}
+
+// RegisterNodeType registers a new node type with its factory function
+func RegisterEdgeType(nodeType string, factory func() graph.EdgeInterface) {
+	edgeRegistry[nodeType] = factory
+}
 
 // StreamDelta streams graph updates for the given UUID
 func (c *LGClient) StreamDelta(graphUUID string, params *DeltaParams, callback UpdateCallback) error {
@@ -113,97 +129,84 @@ func (c *LGClient) StreamDelta(graphUUID string, params *DeltaParams, callback U
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	scanner := bufio.NewScanner(resp.Body)
-	var header *DeltaHeader
+	decoder := json.NewDecoder(resp.Body)
 
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" {
+	// Parse the header
+	var header DeltaHeader
+	if err := decoder.Decode(&header); err != nil {
+		return fmt.Errorf("failed to decode header: %w", err)
+	}
+	callback(&header, 0, nil, nil)
+
+	// Continue parsing updates
+	for decoder.More() {
+		var update [2]json.RawMessage
+		if err := decoder.Decode(&update); err != nil {
+			callback(&header, 0, nil, fmt.Errorf("failed to decode update: %w", err))
 			continue
 		}
 
-		// Parse the JSON array
-		var rawMessage json.RawMessage
-		if err := json.Unmarshal([]byte(line), &rawMessage); err != nil {
-			callback(nil, 0, nil, fmt.Errorf("failed to parse line: %w", err))
-			continue
-		}
-
-		if c.Debug {
-			fmt.Println("lemonclient rawMessage: ", string(rawMessage))
-		}
-
-		// Check if this is an array or object
-		if line[0] == '{' {
-			// This is the header
-			header = &DeltaHeader{}
-			if err := json.Unmarshal(rawMessage, header); err != nil {
-				callback(nil, 0, nil, fmt.Errorf("failed to parse header: %w", err))
-				continue
-			}
-			callback(header, 0, nil, nil)
-			continue
-		}
-
-		// This is an update array [flags, data]
-		var update []json.RawMessage
-		if err := json.Unmarshal(rawMessage, &update); err != nil {
-			callback(header, 0, nil, fmt.Errorf("failed to parse update array: %w", err))
-			continue
-		}
-
-		if len(update) != 2 {
-			callback(header, 0, nil, fmt.Errorf("invalid update format"))
-			continue
-		}
-
-		// Parse flags
 		var flags int64
 		if err := json.Unmarshal(update[0], &flags); err != nil {
-			callback(header, 0, nil, fmt.Errorf("failed to parse flags: %w", err))
+			callback(&header, 0, nil, fmt.Errorf("failed to parse flags: %w", err))
 			continue
 		}
 
 		// Parse data based on flags
 		var data interface{}
 		if flags == 0 {
-			// Graph metadata
 			var meta job.JobMetadata
 			if err := json.Unmarshal(update[1], &meta); err != nil {
-				callback(header, flags, nil, fmt.Errorf("failed to parse graph meta: %w", err))
+				callback(&header, flags, nil, fmt.Errorf("failed to parse graph meta: %w", err))
 				continue
 			}
 			data = meta
 		} else if flags&1 != 0 {
-			// Node data
-			var node graph.NodeInterface
-			if err := json.Unmarshal(update[1], &node); err != nil {
-				callback(header, flags, nil, fmt.Errorf("failed to parse node data: %w", err))
+			// Node data - first unmarshal into a base node to get the type
+			var baseNode graph.NodeMembers
+			if err := json.Unmarshal(update[1], &baseNode); err != nil {
+				callback(&header, flags, nil, fmt.Errorf("failed to parse base node: %w", err))
 				continue
 			}
-			data = node
+
+			// Look up the node type in the registry
+			// factory, exists := nodeRegistry[baseNode.Type]
+			// if !exists {
+			// 	// If no specific type is registered, use the base node
+			// 	data = &baseNode
+			// } else {
+			// 	// Create a new instance of the specific node type
+			// 	node := factory()
+			// 	if err := json.Unmarshal(update[1], node); err != nil {
+			// 		callback(&header, flags, nil, fmt.Errorf("failed to parse specific node type: %w", err))
+			// 		continue
+			// 	}
+			// 	data = node
+			// }
+			if data, err = utils.JSONBytesToMap(update[1]); err != nil {
+				callback(&header, flags, nil, fmt.Errorf("failed to parse node from JSON: %w", err))
+				continue
+			}
+
 		} else if flags&2 != 0 {
 			// Edge data
-			var edge graph.EdgeInterface
+			var edge graph.EdgeMembers
 			if err := json.Unmarshal(update[1], &edge); err != nil {
-				callback(header, flags, nil, fmt.Errorf("failed to parse edge data: %w", err))
+				callback(&header, flags, nil, fmt.Errorf("failed to parse edge: %w", err))
 				continue
 			}
+			data = &edge
 		} else {
 			// Generic data
 			var genericData map[string]interface{}
 			if err := json.Unmarshal(update[1], &genericData); err != nil {
-				callback(header, flags, nil, fmt.Errorf("failed to parse generic data: %w", err))
+				callback(&header, flags, nil, fmt.Errorf("failed to parse generic data: %w", err))
 				continue
 			}
 			data = genericData
 		}
 
-		callback(header, flags, data, nil)
-	}
-
-	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("scanner error: %w", err)
+		callback(&header, flags, data, nil)
 	}
 
 	return nil
