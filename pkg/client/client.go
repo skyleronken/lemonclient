@@ -446,7 +446,12 @@ func (s *LGClient) GetJobD3View(uuid string) (D3View, error) {
 	return d3View, err
 }
 
+// POST /lg/delta/{job_uuid} ; fetch lists of new/updated/deleted nodes and edges
+// See delta.go for more information
+
+///
 /// TODOS
+///
 
 // TODO: GET /graph/{uuid} ; get entire detail of a graph (including all edges and nodes)
 
@@ -493,5 +498,3 @@ func (s *LGClient) GetJobD3View(uuid string) (D3View, error) {
 // TODO: HEAD /lg/task/{job_uuid}/{task_uuid} ; update a timestamp for a given task without returning it
 
 // TODO: DELETE /lg/task/{job_uuid}/{task_uuid} ; delete a given task
-
-// TODO: POST /lg/delta/{job_uuid} ; fetch lists of new/updated/deleted nodes and edges
