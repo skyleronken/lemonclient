@@ -71,11 +71,21 @@ type D3View struct {
 }
 
 type D3Node struct {
-	Data graph.NodeInterface `json:"data"`
+	Data D3NodeData `json:"data"`
+}
+
+type D3NodeData struct {
+	graph.NodeMembers
+	PID int `json:"PID"`
 }
 
 type D3Edge struct {
-	Data graph.EdgeInterface `json:"data"`
+	Data D3EdgeData `json:"data"`
+}
+
+type D3EdgeData struct {
+	graph.EdgeMembers
+	PID int `json:"PID"`
 }
 
 type JobGraphs []JobGraph
