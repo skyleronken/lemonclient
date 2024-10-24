@@ -131,6 +131,13 @@ func (c *LGClient) StreamDelta(graphUUID string, params *DeltaParams, callback U
 
 	decoder := json.NewDecoder(resp.Body)
 
+	// First token should be the start of the array
+	if t, err := decoder.Token(); err != nil {
+		return fmt.Errorf("failed to read response start token: %w", err)
+	} else if delim, ok := t.(json.Delim); !ok || delim != '[' {
+		return fmt.Errorf("expected array start, got %v", t)
+	}
+
 	// Parse the header
 	var header DeltaHeader
 	if err := decoder.Decode(&header); err != nil {
@@ -140,6 +147,13 @@ func (c *LGClient) StreamDelta(graphUUID string, params *DeltaParams, callback U
 
 	// Continue parsing updates
 	for decoder.More() {
+
+		var rawUpdate json.RawMessage
+		if err := decoder.Decode(&rawUpdate); err != nil {
+			callback(&header, 0, nil, fmt.Errorf("failed to decode update: %w", err))
+			continue
+		}
+
 		var update [2]json.RawMessage
 		if err := decoder.Decode(&update); err != nil {
 			callback(&header, 0, nil, fmt.Errorf("failed to decode update: %w", err))
@@ -207,6 +221,13 @@ func (c *LGClient) StreamDelta(graphUUID string, params *DeltaParams, callback U
 		}
 
 		callback(&header, flags, data, nil)
+	}
+
+	// Verify we hit the end of the array
+	if t, err := decoder.Token(); err != nil {
+		return fmt.Errorf("failed to read response end token: %w", err)
+	} else if delim, ok := t.(json.Delim); !ok || delim != ']' {
+		return fmt.Errorf("expected array end, got %v", t)
 	}
 
 	return nil
