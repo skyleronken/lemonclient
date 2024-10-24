@@ -265,7 +265,6 @@ func (s *LGClient) sendDelete(path string, params interface{}, body interface{},
 	}
 
 	return resp, err
-
 }
 
 // Public Methods
@@ -376,7 +375,6 @@ func (s *LGClient) CreateJob(j job.Job) (NewJobId, error) {
 	newJob := NewJobId{}
 
 	_, err := s.sendPost("/graph", nil, j, &newJob)
-
 	return newJob, err
 }
 
@@ -434,6 +432,7 @@ func (s *LGClient) GetJobD3View(uuid string) (D3View, error) {
 	d3View := D3View{}
 
 	_, err := s.sendGet(fmt.Sprintf("/d3/%s", uuid), nil, &d3View)
+	fmt.Printf("D3: %v+\n", d3View)
 
 	return d3View, err
 }
