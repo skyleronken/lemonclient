@@ -41,24 +41,24 @@ type DeltaParams struct {
 // UpdateCallback is a function type for handling updates
 type UpdateCallback func(header *DeltaHeader, flags int64, data interface{}, err error)
 
-// buildTagParams converts the Tags map into URL query parameters
-func (p *DeltaParams) buildTagParams() map[string][]string {
-	params := make(map[string][]string)
+// // buildTagParams converts the Tags map into URL query parameters
+// func (p *DeltaParams) buildTagParams() map[string][]string {
+// 	params := make(map[string][]string)
 
-	if p.Position != nil {
-		params["pos"] = []string{fmt.Sprintf("%d", *p.Position)}
-	}
-	if p.Style != nil {
-		params["style"] = []string{*p.Style}
-	}
+// 	if p.Position != nil {
+// 		params["pos"] = []string{fmt.Sprintf("%d", *p.Position)}
+// 	}
+// 	if p.Style != nil {
+// 		params["style"] = []string{*p.Style}
+// 	}
 
-	for tag, queries := range p.Tags {
-		key := fmt.Sprintf("tag.%s", tag)
-		params[key] = queries
-	}
+// 	for tag, queries := range p.Tags {
+// 		key := fmt.Sprintf("tag.%s", tag)
+// 		params[key] = queries
+// 	}
 
-	return params
-}
+// 	return params
+// }
 
 // StreamDelta streams graph updates for the given UUID
 func (c *LGClient) StreamDelta(graphUUID string, params *DeltaParams, callback UpdateCallback) error {
@@ -72,11 +72,30 @@ func (c *LGClient) StreamDelta(graphUUID string, params *DeltaParams, callback U
 
 	// Add tag parameters manually
 	q := req.URL.Query()
-	for k, v := range params.buildTagParams() {
-		for _, val := range v {
-			q.Add(k, val)
+	// for k, v := range params.buildTagParams() {
+	// 	for _, val := range v {
+	// 		q.Add(k, val)
+	// 	}
+	// }
+
+	// Add position and style if present
+	if params != nil {
+		if params.Position != nil {
+			q.Set("pos", fmt.Sprintf("%d", *params.Position))
+		}
+		if params.Style != nil {
+			q.Set("style", *params.Style)
+		}
+
+		// Add tag parameters
+		for tag, queries := range params.Tags {
+			key := fmt.Sprintf("tag.%s", tag)
+			for _, val := range queries {
+				q.Add(key, val)
+			}
 		}
 	}
+
 	req.URL.RawQuery = q.Encode()
 
 	client := &http.Client{}
