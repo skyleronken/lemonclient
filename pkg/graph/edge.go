@@ -140,6 +140,47 @@ func EdgeToJson(e EdgeInterface, minimal bool, includeNodes bool) ([]byte, error
 	return json.Marshal(eMap)
 }
 
+// JsonToEdge takes JSON bytes and converts them into an Edge struct, returning it as an EdgeInterface.
+func JsonToEdge(jsonBytes []byte) (EdgeInterface, error) {
+	rawEdge, err := utils.JSONBytesToMap(jsonBytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert JSON bytes to map: %w", err)
+	}
+
+	edge := &edge{
+		Properties: make(map[string]interface{}),
+	}
+
+	for key, value := range rawEdge {
+		switch key {
+		case "type":
+			edge.Type = value.(string)
+		case "ID":
+			edge.ID = value.(string)
+		case "src":
+			srcNode, err := JsonToNode([]byte(fmt.Sprintf("%v", value)))
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse source node: %w", err)
+			}
+			edge.Source = srcNode
+		case "tgt":
+			tgtNode, err := JsonToNode([]byte(fmt.Sprintf("%v", value)))
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse target node: %w", err)
+			}
+			edge.Target = tgtNode
+		default:
+			edge.Properties[key] = value
+		}
+	}
+
+	if edge.Type == "" || edge.Source == nil || edge.Target == nil {
+		return nil, fmt.Errorf("JSON must contain 'type', 'src', and 'tgt' fields")
+	}
+
+	return edge, nil
+}
+
 func EdgeToChain(e EdgeInterface) (ChainInterface, error) {
 
 	// c := Chain{

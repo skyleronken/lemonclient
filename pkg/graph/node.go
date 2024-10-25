@@ -110,3 +110,34 @@ func NodeToJson(n NodeInterface, minimal bool) ([]byte, error) {
 
 	return json.Marshal(nMap)
 }
+
+// JsonToNode takes JSON bytes and converts them into a Node struct, returning it as a NodeInterface.
+func JsonToNode(jsonBytes []byte) (NodeInterface, error) {
+	rawNode, err := utils.JSONBytesToMap(jsonBytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert JSON bytes to map: %w", err)
+	}
+
+	node := &node{
+		Properties: make(map[string]interface{}),
+	}
+
+	for key, value := range rawNode {
+		switch key {
+		case "type":
+			node.Type = value.(string)
+		case "value":
+			node.Value = value.(string)
+		case "ID":
+			node.ID = int(value.(float64))
+		default:
+			node.Properties[key] = value
+		}
+	}
+
+	if node.Type == "" || node.Value == "" {
+		return nil, fmt.Errorf("JSON must contain 'type' and 'value' fields")
+	}
+
+	return node, nil
+}

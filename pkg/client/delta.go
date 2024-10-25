@@ -8,7 +8,6 @@ import (
 
 	"github.com/skyleronken/lemonclient/pkg/graph"
 	"github.com/skyleronken/lemonclient/pkg/job"
-	"github.com/skyleronken/lemonclient/pkg/utils"
 )
 
 // Header represents the initial response header from the delta API
@@ -177,11 +176,11 @@ func (c *LGClient) StreamDelta(graphUUID string, params *DeltaParams, callback U
 			data = meta
 		} else if flags&1 != 0 {
 			// Node data - first unmarshal into a base node to get the type
-			var baseNode graph.NodeMembers
-			if err := json.Unmarshal(update[1], &baseNode); err != nil {
-				callback(&header, flags, nil, fmt.Errorf("failed to parse base node: %w", err))
-				continue
-			}
+			// var baseNode graph.NodeMembers
+			// if err := json.Unmarshal(update[1], &baseNode); err != nil {
+			// 	callback(&header, flags, nil, fmt.Errorf("failed to parse base node: %w", err))
+			// 	continue
+			// }
 
 			// Look up the node type in the registry
 			// factory, exists := nodeRegistry[baseNode.Type]
@@ -197,19 +196,19 @@ func (c *LGClient) StreamDelta(graphUUID string, params *DeltaParams, callback U
 			// 	}
 			// 	data = node
 			// }
-			if data, err = utils.JSONBytesToMap(update[1]); err != nil {
+
+			// all nodes are generic
+			if data, err = graph.JsonToNode(update[1]); err != nil {
 				callback(&header, flags, nil, fmt.Errorf("failed to parse node from JSON: %w", err))
 				continue
 			}
 
 		} else if flags&2 != 0 {
 			// Edge data
-			var edge graph.EdgeMembers
-			if err := json.Unmarshal(update[1], &edge); err != nil {
+			if data, err = graph.JsonToEdge(update[1]); err != nil {
 				callback(&header, flags, nil, fmt.Errorf("failed to parse edge: %w", err))
 				continue
 			}
-			data = &edge
 		} else {
 			// Generic data
 			var genericData map[string]interface{}
