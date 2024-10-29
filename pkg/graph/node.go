@@ -42,13 +42,18 @@ func (n node) GetProperties() map[string]interface{} { return n.Properties }
 func (n node) validate()                             {}
 
 // This is the constructor which should be used to take an arbitrary struct and turn it into an LG node.
-func Node(obj interface{}) (NodeInterface, error) {
+
+func Node(obj interface{}, properties ...map[string]interface{}) (NodeInterface, error) {
 
 	sValue := reflect.ValueOf(obj)
 	sType := sValue.Type()
 
 	n := &node{
 		Properties: make(map[string]interface{}),
+	}
+
+	if len(properties) > 0 {
+		n.Properties = properties[0]
 	}
 
 	hasType, hasValue := false, false
