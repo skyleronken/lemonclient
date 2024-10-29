@@ -52,10 +52,6 @@ func Node(obj interface{}, properties ...map[string]interface{}) (NodeInterface,
 		Properties: make(map[string]interface{}),
 	}
 
-	if len(properties) > 0 {
-		n.Properties = properties[0]
-	}
-
 	hasType, hasValue := false, false
 
 	for i := 0; i < sValue.NumField(); i++ {
@@ -78,6 +74,10 @@ func Node(obj interface{}, properties ...map[string]interface{}) (NodeInterface,
 		} else {
 			n.Properties[name] = value.Interface()
 		}
+	}
+
+	if len(properties) > 0 {
+		n.Properties = properties[0]
 	}
 
 	if !hasValue || !hasType {
