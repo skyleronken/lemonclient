@@ -92,6 +92,21 @@ func Node(obj interface{}, properties ...map[string]interface{}) (NodeInterface,
 
 }
 
+// SetProperty sets a property on a Node. If the property already exists, it will be overwritten.
+func (n *node) SetProperty(key string, value interface{}) error {
+	// Don't allow overwriting of reserved fields
+	if key == "type" || key == "value" || key == "ID" {
+		return fmt.Errorf("cannot set reserved field: %s", key)
+	}
+
+	if n.Properties == nil {
+		n.Properties = make(map[string]interface{})
+	}
+
+	n.Properties[key] = value
+	return nil
+}
+
 // This function should be used when turning a Node into JSON for submission to LG. The `minimal` flag determined if the properties should be included, or just the keyed material.
 func NodeToJson(n NodeInterface, minimal bool) ([]byte, error) {
 
