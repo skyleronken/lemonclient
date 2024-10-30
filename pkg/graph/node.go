@@ -24,6 +24,7 @@ type NodeInterface interface {
 	GetValue() string
 	GetID() int
 	GetProperties() map[string]interface{}
+	SetProperty(key string, value interface{}) error
 	validate()
 }
 
@@ -40,6 +41,19 @@ func (n node) GetValue() string                      { return n.Value }
 func (n node) GetType() string                       { return n.Type }
 func (n node) GetProperties() map[string]interface{} { return n.Properties }
 func (n node) validate()                             {}
+func (n *node) SetProperty(key string, value interface{}) error {
+	// Don't allow overwriting of reserved fields
+	if key == "type" || key == "value" || key == "ID" {
+		return fmt.Errorf("cannot set reserved field: %s", key)
+	}
+
+	if n.Properties == nil {
+		n.Properties = make(map[string]interface{})
+	}
+
+	n.Properties[key] = value
+	return nil
+}
 
 // This is the constructor which should be used to take an arbitrary struct and turn it into an LG node.
 
@@ -90,21 +104,6 @@ func Node(obj interface{}, properties ...map[string]interface{}) (NodeInterface,
 
 	return n, nil
 
-}
-
-// SetProperty sets a property on a Node. If the property already exists, it will be overwritten.
-func (n *node) SetProperty(key string, value interface{}) error {
-	// Don't allow overwriting of reserved fields
-	if key == "type" || key == "value" || key == "ID" {
-		return fmt.Errorf("cannot set reserved field: %s", key)
-	}
-
-	if n.Properties == nil {
-		n.Properties = make(map[string]interface{})
-	}
-
-	n.Properties[key] = value
-	return nil
 }
 
 // This function should be used when turning a Node into JSON for submission to LG. The `minimal` flag determined if the properties should be included, or just the keyed material.
