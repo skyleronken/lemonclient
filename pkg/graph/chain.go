@@ -73,3 +73,34 @@ func ChainToJson(c ChainInterface, minimal bool) ([][]byte, error) {
 	}
 	return chainJson, nil
 }
+
+// JsonToChain takes a slice of JSON byte slices and converts them into a Chain struct.
+// The JSON bytes should alternate between node and edge representations.
+func JsonToChain(jsonBytes [][]byte) (ChainInterface, error) {
+	if len(jsonBytes) == 0 {
+		return nil, fmt.Errorf("empty JSON array provided")
+	}
+
+	if len(jsonBytes)%2 == 0 {
+		return nil, fmt.Errorf("invalid number of elements: must be odd number alternating between nodes and edges")
+	}
+
+	elements := make([]interface{}, len(jsonBytes))
+
+	for idx := range jsonBytes {
+		var err error
+		if idx%2 == 0 { // nodes at even indices
+			elements[idx], err = JsonToNode(jsonBytes[idx])
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse node at index %d: %w", idx, err)
+			}
+		} else { // edges at odd indices
+			elements[idx], err = JsonToEdge(jsonBytes[idx])
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse edge at index %d: %w", idx, err)
+			}
+		}
+	}
+
+	return CreateChain(elements...)
+}
