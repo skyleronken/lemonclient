@@ -25,7 +25,7 @@ type EdgeInterface interface {
 	GetType() string
 	GetSource() NodeInterface
 	GetTarget() NodeInterface
-	GetID() string
+	GetID() int
 	GetProperties() map[string]interface{}
 	validate()
 }
@@ -34,7 +34,7 @@ type EdgeInterface interface {
 type EdgeMembers struct {
 	Source       NodeInterface `json:"src,omitempty" mapstructure:"src"`
 	Target       NodeInterface `json:"tgt,omitempty" mapstructure:"tgt"`
-	ID           string        `json:"ID,omitempty"`
+	ID           int           `json:"ID,omitempty"`
 	SourceId     string        `json:"srcID,omitempty" mapstructure:"srcID"`
 	TargetId     string        `json:"tgtID,omitempty" mapstructure:"tgtID"`
 	Type         string        `json:"type" mapstructure:"type"`
@@ -43,7 +43,7 @@ type EdgeMembers struct {
 
 func (e edge) GetSource() NodeInterface              { return e.Source }
 func (e edge) GetTarget() NodeInterface              { return e.Target }
-func (e edge) GetID() string                         { return e.ID }
+func (e edge) GetID() int                            { return e.ID }
 func (e edge) GetType() string                       { return e.Type }
 func (e edge) GetProperties() map[string]interface{} { return e.Properties }
 
@@ -52,7 +52,11 @@ func (e edge) GetProperties() map[string]interface{} { return e.Properties }
 // 2) If creating an edge, create it as part of a Chain, and leave the Source and Target nil.
 func Edge(obj interface{}) (EdgeInterface, error) {
 
+	// Get the value and handle pointer types
 	sValue := reflect.ValueOf(obj)
+	if sValue.Kind() == reflect.Ptr {
+		sValue = sValue.Elem()
+	}
 	sType := sValue.Type()
 
 	e := edge{
@@ -67,7 +71,7 @@ func Edge(obj interface{}) (EdgeInterface, error) {
 		name := field.Name
 
 		if name == "ID" {
-			e.ID = value.String()
+			e.ID = int(value.Int())
 		} else if name == "Type" {
 			hasType = true
 			e.Type = value.String()
@@ -126,7 +130,7 @@ func EdgeToJson(e EdgeInterface, minimal bool, includeNodes bool) ([]byte, error
 	eMap := map[string]interface{}{}
 
 	// If no ID, then this is a new edge and properties MUST be included for creation purposes.
-	if !minimal || len(e.GetID()) == 0 {
+	if !minimal || e.GetID() == 0 {
 		eJson, _ := json.Marshal(e.GetProperties()) // Convert to JSON to account for tags
 		eMap, err = utils.JSONBytesToMap(eJson)     // Convert to map to add type/key
 		if err != nil {
@@ -154,7 +158,7 @@ func EdgeToJson(e EdgeInterface, minimal bool, includeNodes bool) ([]byte, error
 func JsonToEdge(jsonBytes []byte) (EdgeInterface, error) {
 	rawEdge, err := utils.JSONBytesToMap(jsonBytes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert JSON bytes to map: %w", err)
+		return nil, fmt.Errorf("failed to convert edge JSON bytes to map: %w", err)
 	}
 
 	edge := &edge{
@@ -166,15 +170,23 @@ func JsonToEdge(jsonBytes []byte) (EdgeInterface, error) {
 		case "type":
 			edge.Type = value.(string)
 		case "ID":
-			edge.ID = value.(string)
-		case "src":
-			srcNode, err := JsonToNode([]byte(fmt.Sprintf("%v", value)))
+			edge.ID = int(value.(float64))
+		case "src", "source":
+			// srcNode, err := JsonToNode([]byte(fmt.Sprintf("%v", value)))
+			// if err != nil {
+			// 	return nil, fmt.Errorf("failed to parse source node: %w", err)
+			// }
+			srcNode, err := MapToNode(value.(map[string]interface{}))
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse source node: %w", err)
 			}
 			edge.Source = srcNode
-		case "tgt":
-			tgtNode, err := JsonToNode([]byte(fmt.Sprintf("%v", value)))
+		case "tgt", "target":
+			// tgtNode, err := JsonToNode([]byte(fmt.Sprintf("%v", value)))
+			// if err != nil {
+			// 	return nil, fmt.Errorf("failed to parse target node: %w", err)
+			// }
+			tgtNode, err := MapToNode(value.(map[string]interface{}))
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse target node: %w", err)
 			}

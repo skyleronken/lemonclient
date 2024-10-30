@@ -2,6 +2,7 @@
 package client
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -449,6 +450,22 @@ func (s *LGClient) GetJobD3View(uuid string) (D3View, error) {
 // POST /lg/delta/{job_uuid} ; fetch lists of new/updated/deleted nodes and edges
 // See delta.go for more information
 
+// GET /graph/{uuid}/edge/{ID} ; get info about specific edge in a graph
+func (s *LGClient) GetJobEdge(uuid string, id int) (graph.EdgeInterface, error) {
+	var rawEdge map[string]interface{}
+	_, err := s.sendGet(fmt.Sprintf("/graph/%s/edge/%d", uuid, id), nil, &rawEdge)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get edge data: %w", err)
+	}
+
+	// Convert the map back to JSON bytes for processing
+	edgeBytes, err := json.Marshal(rawEdge)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal edge data: %w", err)
+	}
+	return graph.JsonToEdge(edgeBytes)
+}
+
 ///
 /// TODOS
 ///
@@ -466,8 +483,6 @@ func (s *LGClient) GetJobD3View(uuid string) (D3View, error) {
 // TODO: GET /graph/{uuid}/node/{ID} ; get info about specifi node in a graph
 
 // TODO: PUT /graph/{uuid}/node/{ID} ; update info about specific node in a graph
-
-// TODO: GET /graph/{uuid}/edge/{ID} ; get info about specifi edge in a graph
 
 // TODO: PUT /graph/{uuid}/edge/{ID} ; update info about specific edge in a graph
 

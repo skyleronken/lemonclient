@@ -59,7 +59,11 @@ func (n *node) SetProperty(key string, value interface{}) error {
 
 func Node(obj interface{}, properties ...map[string]interface{}) (NodeInterface, error) {
 
+	// Get the value and handle pointer types
 	sValue := reflect.ValueOf(obj)
+	if sValue.Kind() == reflect.Ptr {
+		sValue = sValue.Elem()
+	}
 	sType := sValue.Type()
 
 	n := &node{
@@ -134,7 +138,7 @@ func NodeToJson(n NodeInterface, minimal bool) ([]byte, error) {
 func JsonToNode(jsonBytes []byte) (NodeInterface, error) {
 	rawNode, err := utils.JSONBytesToMap(jsonBytes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert JSON bytes to map: %w", err)
+		return nil, fmt.Errorf("failed to convert node JSON bytes to map: %w", err)
 	}
 
 	node := &node{
@@ -156,6 +160,41 @@ func JsonToNode(jsonBytes []byte) (NodeInterface, error) {
 
 	if node.Type == "" || node.Value == "" {
 		return nil, fmt.Errorf("JSON must contain 'type' and 'value' fields")
+	}
+
+	return node, nil
+}
+
+// MapToNode converts a map[string]interface{} into a Node struct, returning it as a NodeInterface.
+func MapToNode(rawNode map[string]interface{}) (NodeInterface, error) {
+	node := &node{
+		Properties: make(map[string]interface{}),
+	}
+
+	for key, value := range rawNode {
+		switch key {
+		case "type":
+			if s, ok := value.(string); ok {
+				node.Type = s
+			}
+		case "value":
+			if s, ok := value.(string); ok {
+				node.Value = s
+			}
+		case "ID":
+			switch v := value.(type) {
+			case float64:
+				node.ID = int(v)
+			case int:
+				node.ID = v
+			}
+		default:
+			node.Properties[key] = value
+		}
+	}
+
+	if node.Type == "" || node.Value == "" {
+		return nil, fmt.Errorf("map must contain 'type' and 'value' fields")
 	}
 
 	return node, nil

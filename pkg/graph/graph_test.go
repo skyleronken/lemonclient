@@ -65,7 +65,7 @@ func setup() {
 
 	te2 := GoodTestEdge{
 		EdgeMembers: EdgeMembers{
-			ID:     "testedge",
+			ID:     1,
 			Type:   "TestEdge",
 			Source: n1,
 			Target: n2,

@@ -213,10 +213,25 @@ func (c *LGClient) StreamDelta(graphUUID string, params *DeltaParams, callback U
 
 		} else if flags&2 != 0 {
 			// Edge data
-			if data, err = graph.JsonToEdge(update[1]); err != nil {
-				callback(&header, flags, nil, fmt.Errorf("failed to parse edge: %w", err))
+			// Extract the edge data to get IDs
+			var edgeData struct {
+				ID int `json:"ID"`
+			}
+			if err := json.Unmarshal(update[1], &edgeData); err != nil {
+				callback(&header, flags, nil, fmt.Errorf("failed to parse edge IDs: %w", err))
 				continue
 			}
+
+			// Get the full edge data using GetJobEdge
+			if data, err = c.GetJobEdge(graphUUID, edgeData.ID); err != nil {
+				callback(&header, flags, nil, fmt.Errorf("failed to get full edge data: %w", err))
+				continue
+			}
+
+			// if data, err = graph.JsonToEdge(update[1]); err != nil {
+			// 	callback(&header, flags, nil, fmt.Errorf("failed to parse edge: %w", err))
+			// 	continue
+			// }
 		} else {
 			// Generic data
 			var genericData map[string]interface{}
