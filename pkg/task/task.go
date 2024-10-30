@@ -153,3 +153,68 @@ func (r TaskResults) MarshalJSON() ([]byte, error) {
 	return d, err
 
 }
+
+func (r *TaskResults) UnmarshalJSON(data []byte) error {
+	type Alias TaskResults
+
+	tTaskResults := &struct {
+		Nodes  []map[string]interface{}   `json:"nodes,omitempty"`
+		Edges  []map[string]interface{}   `json:"edges,omitempty"`
+		Chains [][]map[string]interface{} `json:"chains,omitempty"`
+		*Alias
+	}{
+		Alias: (*Alias)(r),
+	}
+
+	if err := json.Unmarshal(data, tTaskResults); err != nil {
+		return err
+	}
+
+	// Convert node maps back to NodeInterface
+	r.Nodes = make([]graph.NodeInterface, 0)
+	for _, nodeMap := range tTaskResults.Nodes {
+		nodeJson, err := json.Marshal(nodeMap)
+		if err != nil {
+			return err
+		}
+		node, err := graph.JsonToNode(nodeJson)
+		if err != nil {
+			return err
+		}
+		r.Nodes = append(r.Nodes, node)
+	}
+
+	// Convert edge maps back to EdgeInterface
+	r.Edges = make([]graph.EdgeInterface, 0)
+	for _, edgeMap := range tTaskResults.Edges {
+		edgeJson, err := json.Marshal(edgeMap)
+		if err != nil {
+			return err
+		}
+		edge, err := graph.JsonToEdge(edgeJson)
+		if err != nil {
+			return err
+		}
+		r.Edges = append(r.Edges, edge)
+	}
+
+	// Convert chain maps back to ChainInterface
+	r.Chains = make([]graph.ChainInterface, 0)
+	for _, chainArray := range tTaskResults.Chains {
+		chainJsons := make([][]byte, len(chainArray))
+		for i, chainMap := range chainArray {
+			chainJson, err := json.Marshal(chainMap)
+			if err != nil {
+				return err
+			}
+			chainJsons[i] = chainJson
+		}
+		chain, err := graph.JsonToChain(chainJsons)
+		if err != nil {
+			return err
+		}
+		r.Chains = append(r.Chains, chain)
+	}
+
+	return nil
+}
