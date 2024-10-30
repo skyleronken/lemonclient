@@ -27,6 +27,7 @@ type EdgeInterface interface {
 	GetTarget() NodeInterface
 	GetID() int
 	GetProperties() map[string]interface{}
+	SetProperty(key string, value interface{}) error
 	validate()
 }
 
@@ -46,6 +47,19 @@ func (e edge) GetTarget() NodeInterface              { return e.Target }
 func (e edge) GetID() int                            { return e.ID }
 func (e edge) GetType() string                       { return e.Type }
 func (e edge) GetProperties() map[string]interface{} { return e.Properties }
+func (e *edge) SetProperty(key string, value interface{}) error {
+	// Don't allow overwriting of reserved fields
+	if key == "type" || key == "source" || key == "target" || key == "ID" {
+		return fmt.Errorf("cannot set reserved field: %s", key)
+	}
+
+	if e.Properties == nil {
+		e.Properties = make(map[string]interface{})
+	}
+
+	e.Properties[key] = value
+	return nil
+}
 
 // An Edge should be used in one of two ways:
 // 1) If updating an edge, instantiate it with its ID and modify it accordingly.
@@ -59,7 +73,7 @@ func Edge(obj interface{}) (EdgeInterface, error) {
 	}
 	sType := sValue.Type()
 
-	e := edge{
+	e := &edge{
 		Properties: make(map[string]interface{}),
 	}
 
