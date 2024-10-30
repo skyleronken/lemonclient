@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -142,21 +143,28 @@ func (c *LGClient) StreamDelta(graphUUID string, params *DeltaParams, callback U
 	if err := decoder.Decode(&header); err != nil {
 		return fmt.Errorf("failed to decode header: %w", err)
 	}
+	if c.Debug {
+		fmt.Printf("Decoded header: %+v\n", header)
+	}
 	callback(&header, 0, nil, nil)
 
 	// Continue parsing updates
 	for decoder.More() {
-
-		var rawUpdate json.RawMessage
-		if err := decoder.Decode(&rawUpdate); err != nil {
-			callback(&header, 0, nil, fmt.Errorf("failed to decode update: %w", err))
-			continue
+		if c.Debug {
+			// Use bufio.Reader to peek at the next value
+			buffered := bufio.NewReader(decoder.Buffered())
+			raw, _ := buffered.Peek(1024)
+			fmt.Printf("Next update raw data: %s\n", string(raw))
 		}
 
 		var update [2]json.RawMessage
 		if err := decoder.Decode(&update); err != nil {
-			callback(&header, 0, nil, fmt.Errorf("failed to decode update: %w", err))
+			callback(&header, 0, nil, fmt.Errorf("failed to decode update (raw: %s): %w", update, err))
 			continue
+		}
+
+		if c.Debug {
+			fmt.Printf("Successfully decoded update: %s\n", update)
 		}
 
 		var flags int64
