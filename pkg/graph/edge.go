@@ -72,18 +72,28 @@ func Edge(obj interface{}) (EdgeInterface, error) {
 			hasType = true
 			e.Type = value.String()
 		} else if name == "Source" {
+			hasSource = true
 			if field.Type.Implements(nodeInterfaceType) {
-				hasSource = true
 				e.Source = value.Interface().(NodeInterface)
 			} else {
-				return nil, fmt.Errorf("`Source` must be a valid Node")
+				// Try to convert to Node
+				node, err := Node(value.Interface())
+				if err != nil {
+					return nil, fmt.Errorf("failed to convert Source to Node: %w", err)
+				}
+				e.Source = node
 			}
 		} else if name == "Target" {
+			hasTarget = true
 			if field.Type.Implements(nodeInterfaceType) {
-				hasTarget = true
 				e.Target = value.Interface().(NodeInterface)
 			} else {
-				return nil, fmt.Errorf("`Target` must be a valid Node")
+				// Try to convert to Node
+				node, err := Node(value.Interface())
+				if err != nil {
+					return nil, fmt.Errorf("failed to convert Target to Node: %w", err)
+				}
+				e.Target = node
 			}
 		} else if name == "EdgeMembers" {
 			hasType = true
