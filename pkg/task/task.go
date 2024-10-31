@@ -2,6 +2,7 @@ package task
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/skyleronken/lemonclient/pkg/adapter"
 	"github.com/skyleronken/lemonclient/pkg/graph"
@@ -139,6 +140,7 @@ func (r TaskResults) MarshalJSON() ([]byte, error) {
 		chainJson, err := graph.ChainToJson(curChain, false)
 		scArray := []map[string]interface{}{}
 		for chainPart := range chainJson {
+			fmt.Println("chainPart:", string(chainJson[chainPart]))
 			scMap, _ := utils.JSONBytesToMap(chainJson[chainPart])
 			if err != nil {
 				return nil, err
@@ -169,6 +171,7 @@ func (r *TaskResults) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, tTaskResults); err != nil {
 		return err
 	}
+	//everything is a map at this point
 
 	// Convert node maps back to NodeInterface
 	r.Nodes = make([]graph.NodeInterface, 0)
@@ -213,6 +216,7 @@ func (r *TaskResults) UnmarshalJSON(data []byte) error {
 		if err != nil {
 			return err
 		}
+		fmt.Println("chain:", chain)
 		r.Chains = append(r.Chains, chain)
 	}
 

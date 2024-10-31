@@ -210,9 +210,10 @@ func JsonToEdge(jsonBytes []byte) (EdgeInterface, error) {
 		}
 	}
 
-	if edge.Type == "" || edge.Source == nil || edge.Target == nil {
-		return nil, fmt.Errorf("JSON must contain 'type', 'src', and 'tgt' fields")
-	}
+	// fmt.Println("edge:", edge)
+	// if edge.Type == "" || edge.Source == nil || edge.Target == nil {
+	// 	return nil, fmt.Errorf("JSON must contain 'type', 'src', and 'tgt' fields")
+	// }
 
 	return edge, nil
 }
