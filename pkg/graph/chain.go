@@ -1,7 +1,10 @@
 // Chains are the idiomatic way for creating edges in LemonGraph.
 package graph
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type chain struct {
 	ChainInterface `json:",omitempty"`
@@ -44,63 +47,99 @@ func CreateChain(elements ...interface{}) (chain, error) {
 // 	Destination NodeInterface
 // }
 
-func ChainToJson(c ChainInterface, minimal bool) ([][]byte, error) {
+func (c chain) MarshalJSON() ([]byte, error) {
+	chainJson := make([]interface{}, len(c.elements))
 
-	// src, _ := NodeToJson(c.Source, true)
-	// dst, _ := NodeToJson(c.Destination, true)
-	// edg, _ := EdgeToJson(c.Edge, true, false) // Dont include src and tgt values when used in a chain
-
-	// return [][]byte{src, edg, dst}, nil
-	chainJson := [][]byte{}
-
-	elements := c.GetElements()
-	for idx := range elements {
-		e := elements[idx]
-		var json []byte
-		var err error
+	for idx, element := range c.elements {
 		if idx%2 == 0 { // nodes at even indices
-			n, _ := e.(NodeInterface)
-			json, err = NodeToJson(n, minimal)
-		} else { // edges at dd indices
-			d, _ := e.(EdgeInterface)
-			json, err = EdgeToJson(d, minimal, false)
-		}
-		if err != nil {
-			return nil, err
-		} else {
-			chainJson = append(chainJson, json)
+			if node, ok := element.(NodeInterface); ok {
+				chainJson[idx] = node
+			} else {
+				return nil, fmt.Errorf("invalid node at index %d", idx)
+			}
+		} else { // edges at odd indices
+			if edge, ok := element.(EdgeInterface); ok {
+				// Let the edge handle its own marshaling
+				chainJson[idx] = edge
+			} else {
+				return nil, fmt.Errorf("invalid edge at index %d", idx)
+			}
 		}
 	}
-	return chainJson, nil
+
+	return json.Marshal(chainJson)
+}
+
+func (c *chain) UnmarshalJSON(data []byte) error {
+	var rawElements []json.RawMessage
+	if err := json.Unmarshal(data, &rawElements); err != nil {
+		return err
+	}
+
+	if len(rawElements)%2 == 0 {
+		return fmt.Errorf("invalid number of elements: must be odd number alternating between nodes and edges")
+	}
+
+	c.elements = make([]interface{}, len(rawElements))
+
+	for idx, rawElement := range rawElements {
+		var err error
+		if idx%2 == 0 { // nodes at even indices
+			c.elements[idx], err = JsonToNode(rawElement)
+			if err != nil {
+				return fmt.Errorf("failed to parse node at index %d: %w", idx, err)
+			}
+		} else { // edges at odd indices
+			c.elements[idx], err = JsonToEdge(rawElement)
+			if err != nil {
+				return fmt.Errorf("failed to parse edge at index %d: %w", idx, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func ChainToJson(c ChainInterface, minimal bool) ([][]byte, error) {
+	// Marshal the entire chain
+	chainJson, err := json.Marshal(c)
+	if err != nil {
+		return nil, err
+	}
+
+	// Unmarshal into array of raw messages to split into separate elements
+	var elements []json.RawMessage
+	if err := json.Unmarshal(chainJson, &elements); err != nil {
+		return nil, err
+	}
+
+	// Convert to [][]byte
+	result := make([][]byte, len(elements))
+	for i, element := range elements {
+		result[i] = []byte(element)
+	}
+
+	return result, nil
 }
 
 // JsonToChain takes a slice of JSON byte slices and converts them into a Chain struct.
 // The JSON bytes should alternate between node and edge representations.
 func JsonToChain(jsonBytes [][]byte) (ChainInterface, error) {
-	if len(jsonBytes) == 0 {
-		return nil, fmt.Errorf("empty JSON array provided")
-	}
-
-	if len(jsonBytes)%2 == 0 {
-		return nil, fmt.Errorf("invalid number of elements: must be odd number alternating between nodes and edges")
-	}
-
-	elements := make([]interface{}, len(jsonBytes))
-
-	for idx := range jsonBytes {
-		var err error
-		if idx%2 == 0 { // nodes at even indices
-			elements[idx], err = JsonToNode(jsonBytes[idx])
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse node at index %d: %w", idx, err)
-			}
-		} else { // edges at odd indices
-			elements[idx], err = JsonToEdge(jsonBytes[idx])
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse edge at index %d: %w", idx, err)
-			}
+	// Combine the separate JSON elements into a single array
+	combinedJson := []byte("[")
+	for i, j := range jsonBytes {
+		if i > 0 {
+			combinedJson = append(combinedJson, ',')
 		}
+		combinedJson = append(combinedJson, j...)
+	}
+	combinedJson = append(combinedJson, ']')
+
+	// Create new chain and unmarshal
+	c := &chain{}
+	if err := json.Unmarshal(combinedJson, c); err != nil {
+		return nil, err
 	}
 
-	return CreateChain(elements...)
+	return c, nil
 }

@@ -6,7 +6,6 @@ import (
 
 	"github.com/skyleronken/lemonclient/pkg/adapter"
 	"github.com/skyleronken/lemonclient/pkg/graph"
-	"github.com/skyleronken/lemonclient/pkg/utils"
 )
 
 type TaskState string
@@ -103,66 +102,56 @@ func PrepareTaskResults(opts ...TaskResultsOptsFunc) *TaskResults {
 	}
 }
 
-func (r TaskResults) MarshalJSON() ([]byte, error) {
-	type Alias TaskResults
+//func (r TaskResults) MarshalJSON() ([]byte, error) {
+// type Alias TaskResults
 
-	tTaskResults := &struct {
-		Nodes  []map[string]interface{}   `json:"nodes,omitempty"`
-		Edges  []map[string]interface{}   `json:"edges,omitempty"`
-		Chains [][]map[string]interface{} `json:"chains,omitempty"`
-		*Alias
-	}{
-		Alias: (*Alias)(&r),
-	}
+// tTaskResults := &struct {
+// 	Nodes  []json.RawMessage `json:"nodes,omitempty"`
+// 	Edges  []json.RawMessage `json:"edges,omitempty"`
+// 	Chains []json.RawMessage `json:"chains,omitempty"`
+// 	*Alias
+// }{
+// 	Alias: (*Alias)(&r),
+// }
 
-	for e := range r.Edges {
-		curEdge := r.Edges[e]
-		edgeJson, _ := graph.EdgeToJson(curEdge, false, false)
-		edgeMap, err := utils.JSONBytesToMap(edgeJson)
-		if err != nil {
-			return nil, err
-		}
-		tTaskResults.Edges = append(tTaskResults.Edges, edgeMap)
-	}
+// // Marshal edges directly
+// for _, edge := range r.Edges {
+// 	edgeJson, err := json.Marshal(edge)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to marshal edge: %w", err)
+// 	}
+// 	tTaskResults.Edges = append(tTaskResults.Edges, edgeJson)
+// }
 
-	for n := range r.Nodes {
-		curNode := r.Nodes[n]
-		nodeJson, _ := graph.NodeToJson(curNode, false)
-		nodeMap, err := utils.JSONBytesToMap(nodeJson)
-		if err != nil {
-			return nil, err
-		}
-		tTaskResults.Nodes = append(tTaskResults.Nodes, nodeMap)
-	}
+// // Marshal nodes directly
+// for _, node := range r.Nodes {
+// 	nodeJson, err := json.Marshal(node)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to marshal node: %w", err)
+// 	}
+// 	tTaskResults.Nodes = append(tTaskResults.Nodes, nodeJson)
+// }
 
-	for c := range r.Chains {
-		curChain := r.Chains[c]
-		chainJson, err := graph.ChainToJson(curChain, false)
-		scArray := []map[string]interface{}{}
-		for chainPart := range chainJson {
-			fmt.Println("chainPart:", string(chainJson[chainPart]))
-			scMap, _ := utils.JSONBytesToMap(chainJson[chainPart])
-			if err != nil {
-				return nil, err
-			}
-			scArray = append(scArray, scMap)
+// // Marshal chains directly
+// for _, chain := range r.Chains {
+// 	chainJson, err := json.Marshal(chain)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to marshal chain: %w", err)
+// 	}
+// 	tTaskResults.Chains = append(tTaskResults.Chains, chainJson)
+// }
 
-		}
-		tTaskResults.Chains = append(tTaskResults.Chains, scArray)
-	}
+// return json.Marshal(tTaskResults)
 
-	d, err := json.Marshal(tTaskResults)
-	return d, err
-
-}
+//}
 
 func (r *TaskResults) UnmarshalJSON(data []byte) error {
 	type Alias TaskResults
 
 	tTaskResults := &struct {
-		Nodes  []map[string]interface{}   `json:"nodes,omitempty"`
-		Edges  []map[string]interface{}   `json:"edges,omitempty"`
-		Chains [][]map[string]interface{} `json:"chains,omitempty"`
+		Nodes  []json.RawMessage   `json:"nodes,omitempty"`
+		Edges  []json.RawMessage   `json:"edges,omitempty"`
+		Chains [][]json.RawMessage `json:"chains,omitempty"`
 		*Alias
 	}{
 		Alias: (*Alias)(r),
@@ -171,52 +160,38 @@ func (r *TaskResults) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, tTaskResults); err != nil {
 		return err
 	}
-	//everything is a map at this point
 
-	// Convert node maps back to NodeInterface
-	r.Nodes = make([]graph.NodeInterface, 0)
-	for _, nodeMap := range tTaskResults.Nodes {
-		nodeJson, err := json.Marshal(nodeMap)
-		if err != nil {
-			return err
-		}
+	// Convert node JSON back to NodeInterface
+	r.Nodes = make([]graph.NodeInterface, 0, len(tTaskResults.Nodes))
+	for _, nodeJson := range tTaskResults.Nodes {
 		node, err := graph.JsonToNode(nodeJson)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to unmarshal node: %w", err)
 		}
 		r.Nodes = append(r.Nodes, node)
 	}
 
-	// Convert edge maps back to EdgeInterface
-	r.Edges = make([]graph.EdgeInterface, 0)
-	for _, edgeMap := range tTaskResults.Edges {
-		edgeJson, err := json.Marshal(edgeMap)
-		if err != nil {
-			return err
-		}
+	// Convert edge JSON back to EdgeInterface
+	r.Edges = make([]graph.EdgeInterface, 0, len(tTaskResults.Edges))
+	for _, edgeJson := range tTaskResults.Edges {
 		edge, err := graph.JsonToEdge(edgeJson)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to unmarshal edge: %w", err)
 		}
 		r.Edges = append(r.Edges, edge)
 	}
 
-	// Convert chain maps back to ChainInterface
-	r.Chains = make([]graph.ChainInterface, 0)
-	for _, chainArray := range tTaskResults.Chains {
-		chainJsons := make([][]byte, len(chainArray))
-		for i, chainMap := range chainArray {
-			chainJson, err := json.Marshal(chainMap)
-			if err != nil {
-				return err
-			}
-			chainJsons[i] = chainJson
+	// Convert chain JSON back to ChainInterface
+	r.Chains = make([]graph.ChainInterface, 0, len(tTaskResults.Chains))
+	for _, chainElements := range tTaskResults.Chains {
+		chainBytes := make([][]byte, len(chainElements))
+		for i, element := range chainElements {
+			chainBytes[i] = []byte(element)
 		}
-		chain, err := graph.JsonToChain(chainJsons)
+		chain, err := graph.JsonToChain(chainBytes)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to unmarshal chain: %w", err)
 		}
-		fmt.Println("chain:", chain)
 		r.Chains = append(r.Chains, chain)
 	}
 
