@@ -264,6 +264,10 @@ func IsEdge(flags int64) bool {
 	return flags&2 != 0
 }
 
+func IsMetadata(flags int64) bool {
+	return flags == 0
+}
+
 func GetTags(flags int64, header *DeltaHeader) []string {
 	var tags []string
 	for i, tag := range header.Tags {
