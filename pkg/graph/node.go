@@ -7,8 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-
-	"github.com/skyleronken/lemonclient/pkg/utils"
 )
 
 // Private node struct to represent an LG node
@@ -110,58 +108,100 @@ func Node(obj interface{}, properties ...map[string]interface{}) (NodeInterface,
 
 }
 
-// This function should be used when turning a Node into JSON for submission to LG. The `minimal` flag determined if the properties should be included, or just the keyed material.
-func NodeToJson(n NodeInterface, minimal bool) ([]byte, error) {
+// Add these two methods to handle JSON marshaling/unmarshaling
+func (n *node) MarshalJSON() ([]byte, error) {
+	// Create a map to hold all node data
+	nMap := make(map[string]interface{})
 
-	var err error
-
-	nMap := map[string]interface{}{}
-
-	// If no ID, then this is a new node and properties MUST be included for creation purposes.
-	if !minimal || n.GetID() == 0 {
-		nJson, _ := json.Marshal(n.GetProperties())
-		nMap, err = utils.JSONBytesToMap(nJson)
-		if err != nil {
-			return nil, err
-		}
+	// Add either ID (if non-zero) or type
+	if n.ID != 0 {
+		nMap["ID"] = n.ID
 	}
 
-	// These should always be included
-	nMap["type"] = n.GetType()
-	nMap["value"] = n.GetValue()
-	nMap["ID"] = n.GetID()
+	nMap["type"] = n.Type
+
+	// Add the remaining core node members
+	nMap["value"] = n.Value
+	if n.LastModified != "" {
+		nMap["last_modified"] = n.LastModified
+	}
+
+	// Add all properties
+	for k, v := range n.Properties {
+		nMap[k] = v
+	}
 
 	return json.Marshal(nMap)
 }
 
-// JsonToNode takes JSON bytes and converts them into a Node struct, returning it as a NodeInterface.
-func JsonToNode(jsonBytes []byte) (NodeInterface, error) {
-	rawNode, err := utils.JSONBytesToMap(jsonBytes)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert node JSON bytes to map: %w", err)
+func (n *node) UnmarshalJSON(data []byte) error {
+	// First unmarshal into a raw map
+	rawNode := make(map[string]interface{})
+	if err := json.Unmarshal(data, &rawNode); err != nil {
+		return err
 	}
 
-	node := &node{
-		Properties: make(map[string]interface{}),
+	// Initialize properties map if needed
+	if n.Properties == nil {
+		n.Properties = make(map[string]interface{})
 	}
 
+	// Process each field
 	for key, value := range rawNode {
 		switch key {
 		case "type":
-			node.Type = value.(string)
+			if s, ok := value.(string); ok {
+				n.Type = s
+			}
 		case "value":
-			node.Value = value.(string)
+			if s, ok := value.(string); ok {
+				n.Value = s
+			}
 		case "ID":
-			node.ID = int(value.(float64))
+			switch v := value.(type) {
+			case float64:
+				n.ID = int(v)
+			case int:
+				n.ID = v
+			}
+		case "last_modified":
+			if s, ok := value.(string); ok {
+				n.LastModified = s
+			}
 		default:
-			node.Properties[key] = value
+			n.Properties[key] = value
 		}
 	}
 
-	if node.Type == "" || node.Value == "" {
-		return nil, fmt.Errorf("JSON must contain 'type' and 'value' fields")
+	// Validate required fields
+	if n.Type == "" || n.Value == "" {
+		return fmt.Errorf("JSON must contain 'type' and 'value' fields")
 	}
 
+	return nil
+}
+
+// Remove or simplify NodeToJson since MarshalJSON now handles this
+func NodeToJson(n NodeInterface, minimal bool) ([]byte, error) {
+	if minimal {
+		// For minimal output, create a new map with just the core fields
+		minimalNode := map[string]interface{}{
+			"type":  n.GetType(),
+			"value": n.GetValue(),
+			"ID":    n.GetID(),
+		}
+		return json.Marshal(minimalNode)
+	}
+	// For full output, use the node's MarshalJSON
+	return json.Marshal(n)
+}
+
+// Simplify JsonToNode to use UnmarshalJSON
+func JsonToNode(jsonBytes []byte) (NodeInterface, error) {
+	node := &node{}
+	if err := json.Unmarshal(jsonBytes, node); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal node: %w", err)
+	}
 	return node, nil
 }
 
