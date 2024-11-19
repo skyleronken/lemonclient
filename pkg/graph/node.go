@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 )
 
 // Private node struct to represent an LG node
@@ -56,7 +57,6 @@ func (n *node) SetProperty(key string, value interface{}) error {
 // This is the constructor which should be used to take an arbitrary struct and turn it into an LG node.
 
 func Node(obj interface{}, properties ...map[string]interface{}) (NodeInterface, error) {
-
 	// Get the value and handle pointer types
 	sValue := reflect.ValueOf(obj)
 	if sValue.Kind() == reflect.Ptr {
@@ -70,28 +70,47 @@ func Node(obj interface{}, properties ...map[string]interface{}) (NodeInterface,
 
 	hasType, hasValue := false, false
 
-	for i := 0; i < sValue.NumField(); i++ {
-		field := sType.Field(i)
-		value := sValue.Field(i)
-		name := field.Name
+	// Helper function to process struct fields recursively
+	var processFields func(reflect.Value, reflect.Type)
+	processFields = func(val reflect.Value, typ reflect.Type) {
+		for i := 0; i < typ.NumField(); i++ {
+			field := typ.Field(i)
+			value := val.Field(i)
 
-		if name == "ID" {
-			n.ID = int(value.Int())
-		} else if name == "Type" {
-			hasType = true
-			n.Type = value.String()
-		} else if name == "Value" {
-			hasValue = true
-			n.Value = value.String()
-		} else if name == "NodeMembers" {
-			hasValue = true
-			hasType = true
-			n.NodeMembers = value.Interface().(NodeMembers)
-		} else {
-			n.Properties[name] = value.Interface()
+			// Handle embedded structs
+			if field.Anonymous {
+				if value.Kind() == reflect.Struct {
+					processFields(value, field.Type)
+				}
+				continue
+			}
+
+			name := field.Name
+			switch name {
+			case "ID":
+				switch value.Kind() {
+				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+					n.ID = int(value.Int())
+				case reflect.String:
+					id, _ := strconv.Atoi(value.String())
+					n.ID = id
+				}
+			case "Type":
+				hasType = true
+				n.Type = value.String()
+			case "Value":
+				hasValue = true
+				n.Value = value.String()
+			default:
+				n.Properties[name] = value.Interface()
+			}
 		}
 	}
 
+	// Process the main struct
+	processFields(sValue, sType)
+
+	// Override properties if provided
 	if len(properties) > 0 {
 		n.Properties = properties[0]
 	}
@@ -105,7 +124,6 @@ func Node(obj interface{}, properties ...map[string]interface{}) (NodeInterface,
 	}
 
 	return n, nil
-
 }
 
 // Add these two methods to handle JSON marshaling/unmarshaling
