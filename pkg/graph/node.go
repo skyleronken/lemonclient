@@ -148,7 +148,6 @@ func (n *node) MarshalJSON() ([]byte, error) {
 	for k, v := range n.Properties {
 		nMap[k] = v
 	}
-
 	return json.Marshal(nMap)
 }
 
