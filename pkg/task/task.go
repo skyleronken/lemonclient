@@ -11,13 +11,13 @@ import (
 type TaskState string
 
 const (
-	TaskState_Active TaskState = "active"
-	TaskState_Idle   TaskState = "idle"
-	TaskState_Done   TaskState = "done"
-	TaskState_Errr   TaskState = "error"
-	TaskState_Retry  TaskState = "retry"
-	TaskState_Void   TaskState = "void"
-	TaskState_Delete TaskState = "delete"
+	TaskState_Active TaskState = "active" // initial state - task will be reissued if timeout is non-zero and timeout seconds have elapsed since its timestamp was updated
+	TaskState_Idle   TaskState = "idle"   // set manually to prevent task from being automatically reissued
+	TaskState_Done   TaskState = "done"   // set automatically (unless prevented) for active/idle tasks that receive results
+	TaskState_Errr   TaskState = "error"  // set manually to indicate task processing encountered an error
+	TaskState_Retry  TaskState = "retry"  // set manually to queue task for immediate reissue and promotion to active
+	TaskState_Void   TaskState = "void"   // set manually to indicate task is ignored
+	TaskState_Delete TaskState = "delete" // pseudostate, set manually to delete task from job
 )
 
 // string = will post results and set state to the provided task state if currently `active` or `idle`

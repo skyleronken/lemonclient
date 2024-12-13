@@ -379,6 +379,15 @@ func (s *LGClient) PostTaskResults(jobId, taskId string, tResults task.TaskResul
 	return err
 }
 
+func (s *LGClient) UpdateTaskStatus(jobId, taskId string, t task.TaskState) error {
+
+	tResults := task.PrepareTaskResults(task.WithStateSetTo(t))
+	taskUrl := fmt.Sprintf("/lg/task/%s/%s", jobId, taskId)
+	_, err := s.sendPost(taskUrl, nil, tResults, nil)
+
+	return err
+}
+
 // This function is used to create new job
 // POST /graph
 func (s *LGClient) CreateJob(j job.Job) (NewJobId, error) {
