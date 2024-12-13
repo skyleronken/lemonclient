@@ -3,6 +3,7 @@ package task
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 
 	"github.com/skyleronken/lemonclient/pkg/adapter"
 	"github.com/skyleronken/lemonclient/pkg/graph"
@@ -99,6 +100,57 @@ func PrepareTaskResults(opts ...TaskResultsOptsFunc) *TaskResults {
 
 	return &TaskResults{
 		TaskResultsOpts: o,
+	}
+}
+
+func CheckState(state interface{}, states ...TaskState) bool {
+	// Get value and type using reflection
+	val := reflect.ValueOf(state)
+	kind := val.Kind()
+
+	switch kind {
+	case reflect.Slice, reflect.Array:
+		// Handle list/array case
+		for i := 0; i < val.Len(); i++ {
+			item := val.Index(i).Interface()
+			if ts, ok := item.(TaskState); ok {
+				for _, checkState := range states {
+					if ts == checkState {
+						return true
+					}
+				}
+			}
+		}
+		return false
+
+	case reflect.String:
+		// Handle string case
+		stateStr := TaskState(val.String())
+		for _, checkState := range states {
+			if stateStr == checkState {
+				return true
+			}
+		}
+		return false
+
+	case reflect.Map:
+		// Handle map[string]string case
+		if val.Type().Key().Kind() == reflect.String && val.Type().Elem().Kind() == reflect.String {
+			for _, key := range val.MapKeys() {
+				if strVal := TaskState(val.MapIndex(key).Interface().(string)); strVal != "" {
+					for _, checkState := range states {
+						if strVal == checkState {
+							return true
+						}
+					}
+				}
+			}
+		}
+		return false
+
+	default:
+		// For any other type, return false
+		return false
 	}
 }
 
