@@ -280,6 +280,16 @@ func (s *LGClient) sendDelete(path string, params interface{}, body interface{},
 
 // Public Methods
 
+// GET /lg/config/{job_uuid} ; get adapter configs and status for a job
+func (s *LGClient) GetJobConfig(jobId string) (job.JobConfig, error) {
+
+	jobConfig := job.JobConfig{}
+
+	_, err := s.sendGet(fmt.Sprintf("/lg/config/%s", jobId), nil, &jobConfig)
+
+	return jobConfig, err
+}
+
 // This function retrieves the status of the server
 // GET /lg/status
 func (s *LGClient) Status() (ServerStatus, error) {
@@ -504,8 +514,6 @@ func (s *LGClient) GetJobEdge(uuid string, id int) (graph.EdgeInterface, error) 
 // TODO: GET /graph?q= ; query all graphs for specific entities
 
 // TODO: GET /lg ; list of adapters and their queries that have outstanding work
-
-// TODO: GET /lg/config/{job_uuid} ; get adapter configs and status for a job
 
 // TODO: POST /lg/config/{job_uuid} ; update the config for a jobs adapters
 

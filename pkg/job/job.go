@@ -33,6 +33,24 @@ type JobMetadata struct {
 	Roles    []permissions.User `json:"roles,omitempty"`
 }
 
+// JobConfig represents the configuration for all adapters in a job
+type JobConfig map[string]AdapterConfig // map of adapter name to its config
+
+// AdapterConfig represents the queries configured for an adapter
+type AdapterConfig map[string]QueryConfig // map of query string to its config
+
+// QueryConfig represents the configuration for a specific query
+type QueryConfig struct {
+	Pos      int  `json:"pos"`
+	QLen     int  `json:"qlen"`
+	Limit    int  `json:"limit"`
+	Tasks    int  `json:"tasks"`
+	Active   bool `json:"active"`
+	Enabled  bool `json:"enabled"`
+	Timeout  int  `json:"timeout"`
+	AutoTask bool `json:"autotask"`
+}
+
 // set default values and validation here
 func defaultOpts() Opts {
 	// However, his is where we implement defaults if we want them.
