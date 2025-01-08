@@ -294,11 +294,19 @@ func (s *LGClient) IsJobCompleted(jobId string) (bool, error) {
 
 	jobConfig, err := s.GetJobConfig(jobId)
 	if err != nil {
+		// If job doesn't exist (400 error), return error
+		if serr, ok := err.(*ServerError); ok && serr.Code == 400 {
+			return false, err
+		}
 		return false, err
 	}
 
 	jobStatus, err := s.GetJobStatus(jobId)
 	if err != nil {
+		// If job doesn't exist (400 error), return error
+		if serr, ok := err.(*ServerError); ok && serr.Code == 400 {
+			return false, err
+		}
 		return false, err
 	}
 
