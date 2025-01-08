@@ -296,7 +296,7 @@ func (s *LGClient) IsJobCompleted(jobId string) (bool, error) {
 	if err != nil {
 		// If job doesn't exist (400 error), return error
 		if serr, ok := err.(*ServerError); ok && serr.Code == 400 {
-			return false, err
+			return true, nil
 		}
 		return false, err
 	}
@@ -305,7 +305,7 @@ func (s *LGClient) IsJobCompleted(jobId string) (bool, error) {
 	if err != nil {
 		// If job doesn't exist (400 error), return error
 		if serr, ok := err.(*ServerError); ok && serr.Code == 400 {
-			return false, err
+			return true, nil
 		}
 		return false, err
 	}
