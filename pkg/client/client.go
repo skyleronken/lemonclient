@@ -290,6 +290,31 @@ func (s *LGClient) GetJobConfig(jobId string) (job.JobConfig, error) {
 	return jobConfig, err
 }
 
+func (s *LGClient) IsJobCompleted(jobId string) (bool, error) {
+
+	jobConfig, err := s.GetJobConfig(jobId)
+	if err != nil {
+		return false, err
+	}
+
+	jobStatus, err := s.GetJobStatus(jobId)
+	if err != nil {
+		return false, err
+	}
+
+	// Check if all adapters are inactive and have no pending tasks
+	for _, adapterConfig := range jobConfig {
+		for _, queryConfig := range adapterConfig {
+			// The Active flag does not respect any idle/errored tasks.
+			if queryConfig.Active || queryConfig.Tasks > 0 || queryConfig.Pos <= jobStatus.MaxID {
+				return false, nil
+			}
+		}
+	}
+
+	return true, nil
+}
+
 // This function retrieves the status of the server
 // GET /lg/status
 func (s *LGClient) Status() (ServerStatus, error) {
