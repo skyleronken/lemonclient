@@ -280,6 +280,41 @@ func (s *LGClient) sendDelete(path string, params interface{}, body interface{},
 
 // Public Methods
 
+// GET /lg/config/{job_uuid} ; get adapter configs and status for a job
+func (s *LGClient) GetJobConfig(jobId string) (job.JobConfig, error) {
+
+	jobConfig := job.JobConfig{}
+
+	_, err := s.sendGet(fmt.Sprintf("/lg/config/%s", jobId), nil, &jobConfig)
+
+	return jobConfig, err
+}
+
+func (s *LGClient) IsJobCompleted(jobId string) (bool, error) {
+
+	jobConfig, err := s.GetJobConfig(jobId)
+	if err != nil {
+		return false, err
+	}
+
+	jobStatus, err := s.GetJobStatus(jobId)
+	if err != nil {
+		return false, err
+	}
+
+	// Check if all adapters are inactive and have no pending tasks
+	for _, adapterConfig := range jobConfig {
+		for _, queryConfig := range adapterConfig {
+			// The Active flag does not respect any idle/errored tasks.
+			if queryConfig.Active || queryConfig.Tasks > 0 || queryConfig.Pos <= jobStatus.MaxID {
+				return false, nil
+			}
+		}
+	}
+
+	return true, nil
+}
+
 // This function retrieves the status of the server
 // GET /lg/status
 func (s *LGClient) Status() (ServerStatus, error) {
@@ -504,8 +539,6 @@ func (s *LGClient) GetJobEdge(uuid string, id int) (graph.EdgeInterface, error) 
 // TODO: GET /graph?q= ; query all graphs for specific entities
 
 // TODO: GET /lg ; list of adapters and their queries that have outstanding work
-
-// TODO: GET /lg/config/{job_uuid} ; get adapter configs and status for a job
 
 // TODO: POST /lg/config/{job_uuid} ; update the config for a jobs adapters
 
