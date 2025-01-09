@@ -204,78 +204,66 @@ func (s *LGClient) sendGet(path string, params interface{}, resultStruct interfa
 	errorStruct := new(ServerError)
 	resp, err := s.newRequest().Get(path).QueryStruct(params).Receive(resultStruct, errorStruct)
 	if err != nil {
-		err = errorStruct
-		fmt.Println(err)
+		return resp, errorStruct
 	}
 
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= 300 {
-		err = fmt.Errorf("non 200 response code: %s", errorStruct.Error())
-	} else {
-		err = nil
+		return resp, errorStruct
 	}
 
-	return resp, err
+	return resp, nil
 }
 
 // Private helper to send POSTs
 func (s *LGClient) sendPost(path string, params interface{}, body interface{}, resultStruct interface{}) (*http.Response, error) {
-
 	if s.Debug {
 		fmt.Printf("POST %s\n", path)
 	}
 	errorStruct := new(ServerError)
 	resp, err := s.newRequest().Post(path).QueryStruct(params).BodyJSON(body).Receive(resultStruct, errorStruct)
 	if err != nil {
-		err = errorStruct
+		return resp, errorStruct
 	}
 
-	if resp != nil {
-		if resp.StatusCode < http.StatusOK || resp.StatusCode >= 300 {
-			err = fmt.Errorf("non 200 response code: %s", errorStruct.Error())
-		}
+	if resp != nil && (resp.StatusCode < http.StatusOK || resp.StatusCode >= 300) {
+		return resp, errorStruct
 	}
 
-	return resp, err
+	return resp, nil
 }
 
 func (s *LGClient) sendPut(path string, params interface{}, body interface{}, resultStruct interface{}) (*http.Response, error) {
-
 	if s.Debug {
 		fmt.Printf("PUT %s\n", path)
 	}
 	errorStruct := new(ServerError)
 	resp, err := s.newRequest().Put(path).QueryStruct(params).BodyJSON(body).Receive(resultStruct, errorStruct)
 	if err != nil {
-		err = errorStruct
+		return resp, errorStruct
 	}
 
-	if resp != nil {
-		if resp.StatusCode < http.StatusOK || resp.StatusCode >= 300 {
-			err = fmt.Errorf("non 200 response code: %s", errorStruct.Error())
-		}
+	if resp != nil && (resp.StatusCode < http.StatusOK || resp.StatusCode >= 300) {
+		return resp, errorStruct
 	}
 
-	return resp, err
+	return resp, nil
 }
 
 func (s *LGClient) sendDelete(path string, params interface{}, body interface{}, resultStruct interface{}) (*http.Response, error) {
-
 	if s.Debug {
 		fmt.Printf("DELETE %s\n", path)
 	}
 	errorStruct := new(ServerError)
 	resp, err := s.newRequest().Delete(path).QueryStruct(params).BodyJSON(body).Receive(resultStruct, errorStruct)
 	if err != nil {
-		err = errorStruct
+		return resp, errorStruct
 	}
 
-	if resp != nil {
-		if resp.StatusCode < http.StatusOK || resp.StatusCode >= 300 {
-			err = fmt.Errorf("non 200 response code: %s", errorStruct.Error())
-		}
+	if resp != nil && (resp.StatusCode < http.StatusOK || resp.StatusCode >= 300) {
+		return resp, errorStruct
 	}
 
-	return resp, err
+	return resp, nil
 }
 
 // Public Methods
@@ -296,7 +284,7 @@ func (s *LGClient) IsJobActive(jobId string) (bool, error) {
 	if err != nil {
 		// If job doesn't exist (400 error), return error
 		if serr, ok := err.(*ServerError); ok && (serr.Code == 400 || serr.Code == 404) {
-			return true, nil
+			return false, nil
 		}
 		return false, err
 	}
