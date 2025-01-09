@@ -290,7 +290,7 @@ func (s *LGClient) GetJobConfig(jobId string) (job.JobConfig, error) {
 	return jobConfig, err
 }
 
-func (s *LGClient) IsJobCompleted(jobId string) (bool, error) {
+func (s *LGClient) IsJobActive(jobId string) (bool, error) {
 
 	jobConfig, err := s.GetJobConfig(jobId)
 	if err != nil {
@@ -305,7 +305,7 @@ func (s *LGClient) IsJobCompleted(jobId string) (bool, error) {
 	if err != nil {
 		// If job doesn't exist (400 error), return error
 		if serr, ok := err.(*ServerError); ok && serr.Code == 400 {
-			return true, nil
+			return false, nil
 		}
 		return false, err
 	}
@@ -315,12 +315,12 @@ func (s *LGClient) IsJobCompleted(jobId string) (bool, error) {
 		for _, queryConfig := range adapterConfig {
 			// The Active flag does not respect any idle/errored tasks.
 			if queryConfig.Active || queryConfig.Tasks > 0 || queryConfig.Pos <= jobStatus.MaxID {
-				return false, nil
+				return true, nil
 			}
 		}
 	}
 
-	return true, nil
+	return false, nil
 }
 
 // This function retrieves the status of the server
