@@ -295,7 +295,7 @@ func (s *LGClient) IsJobActive(jobId string) (bool, error) {
 	jobConfig, err := s.GetJobConfig(jobId)
 	if err != nil {
 		// If job doesn't exist (400 error), return error
-		if serr, ok := err.(*ServerError); ok && serr.Code == 400 {
+		if serr, ok := err.(*ServerError); ok && (serr.Code == 400 || serr.Code == 404) {
 			return true, nil
 		}
 		return false, err
@@ -304,7 +304,7 @@ func (s *LGClient) IsJobActive(jobId string) (bool, error) {
 	jobStatus, err := s.GetJobStatus(jobId)
 	if err != nil {
 		// If job doesn't exist (400 error), return error
-		if serr, ok := err.(*ServerError); ok && serr.Code == 400 {
+		if serr, ok := err.(*ServerError); ok && (serr.Code == 400 || serr.Code == 404) {
 			return false, nil
 		}
 		return false, err
