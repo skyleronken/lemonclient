@@ -210,6 +210,8 @@ func (s *LGClient) sendGet(path string, params interface{}, resultStruct interfa
 	}
 
 	if resp != nil && (resp.StatusCode < http.StatusOK || resp.StatusCode >= 300) {
+		fmt.Println("resp sendGet: ", resp)
+		fmt.Println("errorStruct sendGet: ", errorStruct)
 		errorStruct.WrappedError = fmt.Sprintf("non 200 response code: %d", resp.StatusCode)
 		return resp, errorStruct
 	}
@@ -280,9 +282,13 @@ func (s *LGClient) sendDelete(path string, params interface{}, body interface{},
 // GET /lg/config/{job_uuid} ; get adapter configs and status for a job
 func (s *LGClient) GetJobConfig(jobId string) (job.JobConfig, error) {
 
+	fmt.Println("GetJobConfig: ", jobId)
 	jobConfig := job.JobConfig{}
 
 	_, err := s.sendGet(fmt.Sprintf("/lg/config/%s", jobId), nil, &jobConfig)
+
+	fmt.Println("jobConfig: ", jobConfig)
+	fmt.Println("err: ", err)
 
 	return jobConfig, err
 }
@@ -290,6 +296,7 @@ func (s *LGClient) GetJobConfig(jobId string) (job.JobConfig, error) {
 func (s *LGClient) IsJobActive(jobId string) (bool, error) {
 
 	jobConfig, err := s.GetJobConfig(jobId)
+
 	if err != nil {
 		// If job doesn't exist (400 error), return error
 		if serr, ok := err.(*ServerError); ok && (serr.Code == 400 || serr.Code == 404) {
