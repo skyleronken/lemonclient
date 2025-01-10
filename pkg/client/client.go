@@ -282,13 +282,9 @@ func (s *LGClient) sendDelete(path string, params interface{}, body interface{},
 // GET /lg/config/{job_uuid} ; get adapter configs and status for a job
 func (s *LGClient) GetJobConfig(jobId string) (job.JobConfig, error) {
 
-	fmt.Println("GetJobConfig: ", jobId)
 	jobConfig := job.JobConfig{}
 
 	_, err := s.sendGet(fmt.Sprintf("/lg/config/%s", jobId), nil, &jobConfig)
-
-	fmt.Println("jobConfig: ", jobConfig)
-	fmt.Println("err: ", err)
 
 	return jobConfig, err
 }
