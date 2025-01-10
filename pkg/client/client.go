@@ -95,9 +95,10 @@ type TaskChainElement map[string]interface{}
 type TaskChain []TaskChainElement
 
 type ServerError struct {
-	Code    int    `json:"code"`
-	Reason  string `json:"reason"`
-	Message string `json:"message"`
+	Code         int    `json:"code"`
+	Reason       string `json:"reason"`
+	Message      string `json:"message"`
+	WrappedError string `json:"error"`
 }
 
 func (e *ServerError) Error() string {
@@ -204,10 +205,12 @@ func (s *LGClient) sendGet(path string, params interface{}, resultStruct interfa
 	errorStruct := new(ServerError)
 	resp, err := s.newRequest().Get(path).QueryStruct(params).Receive(resultStruct, errorStruct)
 	if err != nil {
+		errorStruct.WrappedError = err.Error()
 		return resp, errorStruct
 	}
 
-	if resp.StatusCode < http.StatusOK || resp.StatusCode >= 300 {
+	if resp != nil && (resp.StatusCode < http.StatusOK || resp.StatusCode >= 300) {
+		errorStruct.WrappedError = fmt.Sprintf("non 200 response code: %d", resp.StatusCode)
 		return resp, errorStruct
 	}
 
@@ -222,10 +225,12 @@ func (s *LGClient) sendPost(path string, params interface{}, body interface{}, r
 	errorStruct := new(ServerError)
 	resp, err := s.newRequest().Post(path).QueryStruct(params).BodyJSON(body).Receive(resultStruct, errorStruct)
 	if err != nil {
+		errorStruct.WrappedError = err.Error()
 		return resp, errorStruct
 	}
 
 	if resp != nil && (resp.StatusCode < http.StatusOK || resp.StatusCode >= 300) {
+		errorStruct.WrappedError = fmt.Sprintf("non 200 response code: %d", resp.StatusCode)
 		return resp, errorStruct
 	}
 
@@ -239,10 +244,12 @@ func (s *LGClient) sendPut(path string, params interface{}, body interface{}, re
 	errorStruct := new(ServerError)
 	resp, err := s.newRequest().Put(path).QueryStruct(params).BodyJSON(body).Receive(resultStruct, errorStruct)
 	if err != nil {
+		errorStruct.WrappedError = err.Error()
 		return resp, errorStruct
 	}
 
 	if resp != nil && (resp.StatusCode < http.StatusOK || resp.StatusCode >= 300) {
+		errorStruct.WrappedError = fmt.Sprintf("non 200 response code: %d", resp.StatusCode)
 		return resp, errorStruct
 	}
 
@@ -256,10 +263,12 @@ func (s *LGClient) sendDelete(path string, params interface{}, body interface{},
 	errorStruct := new(ServerError)
 	resp, err := s.newRequest().Delete(path).QueryStruct(params).BodyJSON(body).Receive(resultStruct, errorStruct)
 	if err != nil {
+		errorStruct.WrappedError = err.Error()
 		return resp, errorStruct
 	}
 
 	if resp != nil && (resp.StatusCode < http.StatusOK || resp.StatusCode >= 300) {
+		errorStruct.WrappedError = fmt.Sprintf("non 200 response code: %d", resp.StatusCode)
 		return resp, errorStruct
 	}
 
