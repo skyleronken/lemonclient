@@ -210,8 +210,6 @@ func (s *LGClient) sendGet(path string, params interface{}, resultStruct interfa
 	}
 
 	if resp != nil && (resp.StatusCode < http.StatusOK || resp.StatusCode >= 300) {
-		fmt.Println("resp sendGet: ", resp)
-		fmt.Println("errorStruct sendGet: ", errorStruct)
 		errorStruct.WrappedError = fmt.Sprintf("non 200 response code: %d", resp.StatusCode)
 		return resp, errorStruct
 	}
